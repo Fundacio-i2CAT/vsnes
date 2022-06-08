@@ -88,7 +88,7 @@ class channel:
 	def get_exist(self):
 		#Return exist_channel
 		return self._exist_channel
-	def search_channel(self,ID):
+	def _search_channel(self,ID):
 		cont = 0
 		for threshold in self.threshold_vector:
 			if ID == threshold.get_id():
@@ -108,7 +108,7 @@ class channel:
 				else: 
 					j +=1
 			n += 1
-		threshold_pos = self.search_channel(ID)
+		threshold_pos = self._search_channel(ID)
 		#Compare the type of the nodes
 		if type(node).__name__ == "Satellite" and type(other).__name__ == "Satellite":
 			threshold = self.threshold_vector[threshold_pos].get_Satellite2Satellite()

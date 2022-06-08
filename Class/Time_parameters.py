@@ -94,7 +94,7 @@ class time_parameters:
 		# Add one to the marker, If these is greater than the lenght of datetime_vector return True because the emulation is over
 		if not(self.RealTime):
 			self._marker +=1
-			if self._marker > len(self._datetime_vector):
+			if self._marker >= len(self._datetime_vector):
 				return True
 			else:
 				return False

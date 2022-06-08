@@ -1,28 +1,34 @@
 [Time]
-	TotalTime = 2
+	# min
 	TimeInterval = 0.5
-	MinSpeed = 10
-	datetime = '2022-04-13 07:31:31'
-	UTC = 0
+	MinSpeed = 5
+	MaxSpeed = 60
+	start_datetime = '2022-04-13 07:31:31'
+	end_datetime = '2022-04-13 07:32:30'
 [Network]
 	interface =  'virbr0'
-	network = '10.0.0.0'
-[SatelliteSegment]
-	[SatelliteSegment.0]
-		config_file = 'test.txt'
-		threshold = 5e6
-		[SatelliteSegment.0.clone_VM]
+	network = '10.0.0.0/24'
+[SpaceSegment]
+	[[SpaceSegment.SatelliteSistem]]
+		TLE = 'test.tle'
+		channels = ['STARLINK']
+		[SpaceSegment.SatelliteSistem.clone_VM]
 			name_VM = 'default'
 			username = 'ubuntu'
 			password = 'ubuntu' 
 [GroundSegment]
-	[GroundSegment.0]
+	[[GroundSegment.GroundSistem]]
 		name = 'i2cat'
 		latitude = 41.38732849041236
 		longitude = 2.1118426322937003
-		height = 25
-		threshold = 5e6	
-		[GroundSegment.0.clone_VM]
+		height = 150
+		channels = ['STARLINK']
+		[GroundSegment.GroundSistem.clone_VM]
 			name_VM = 'default'
 			username = 'ubuntu'
 			password = 'ubuntu'
+[Channel]
+	[[Channel.threshold]]
+		id = 'STARLINK'
+		inter-satellite_threshold = 5e6
+		Ground2Satellite_threshold = 10e6

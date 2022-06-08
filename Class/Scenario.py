@@ -3,7 +3,7 @@ from Class.Satellite import Satellite
 from Class.Ground_Station import GroundStation
 from Class.Time_parameters import time_parameters
 from Class.Channel import channel
-from skyfield.api import load, wgs84
+from skyfield.api import load
 from ipaddress import IPv4Network
 from czml import czml
 import time
@@ -53,13 +53,15 @@ class scenario:
 		SpaceSegment = TOMLfile['SpaceSegment']
 		for SatelliteSistem in SpaceSegment['SatelliteSistem']:
 			config_file = SatelliteSistem['TLE']
+			print(config_file)
 			satellites = load.tle_file(config_file)
+			print(satellites)
 			for sat in satellites:
 				self.AddSatellite(sat,SatelliteSistem,run_VM)
 		GroundSegment = TOMLfile['GroundSegment']
 		for GroundSistem in GroundSegment['GroundSistem']:
 			self.AddGroundStation(GroundSistem,run_VM)
-		self.write_czml()
+		#self.write_czml()
 	def AddSatellite(self,sat_czml,constallation,run_VM):
 		#Creates a Satellite object and add to the scenario
 		try:
@@ -111,7 +113,7 @@ class scenario:
 		# EMU equals True, update the rules of the interfaces to represent the delay and the channel discontinuation
 		datetime = self._time_parameters.get_date_time()
 		self._channel.update(self._node_list,self._nNodes,datetime,EMU,self.interface)
-	def delate (self):
+	def delete (self):
 		# delate all the nodes and channels
 		self._node_list = []
 		self._channel.delete()

@@ -1,6 +1,4 @@
 [Time]
-	# h
-	TotalTime = 1
 	# min
 	TimeInterval = 0.5
 	MinSpeed = 5
