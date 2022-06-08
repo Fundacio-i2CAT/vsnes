@@ -1,0 +1,28 @@
+[Time]
+	TotalTime = 2
+	TimeInterval = 0.5
+	MinSpeed = 10
+	datetime = '2022-04-13 07:31:31'
+	UTC = 0
+[Network]
+	interface =  'virbr0'
+	network = '10.0.0.0'
+[SatelliteSegment]
+	[SatelliteSegment.0]
+		config_file = 'test.txt'
+		threshold = 5e6
+		[SatelliteSegment.0.clone_VM]
+			name_VM = 'default'
+			username = 'ubuntu'
+			password = 'ubuntu' 
+[GroundSegment]
+	[GroundSegment.0]
+		name = 'i2cat'
+		latitude = 41.38732849041236
+		longitude = 2.1118426322937003
+		height = 25
+		threshold = 5e6	
+		[GroundSegment.0.clone_VM]
+			name_VM = 'default'
+			username = 'ubuntu'
+			password = 'ubuntu'

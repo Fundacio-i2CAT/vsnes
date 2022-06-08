@@ -1,0 +1,40 @@
+[Time]
+	# h
+	TotalTime = 1
+	# min
+	TimeInterval = 0.5
+	MinSpeed = 5
+	MaxSpeed = 60
+	start_datetime = '2022-05-20 04:30:00'
+	end_datetime = '2022-05-20 06:30:00'
+[Network]
+	interface =  'virbr0'
+	network = '10.0.0.0/24'
+[SpaceSegment]
+	[[SpaceSegment.SatelliteSistem]]
+		TLE = 'p1.tle'
+		channels = ['STARLINK']
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'default'
+			username = 'ubuntu'
+			password = 'ubuntu' 
+[GroundSegment]
+	[[GroundSegment.GroundSistem]]
+		name = 'i2cat'
+		latitude = 41.38732849041236
+		longitude = 2.1118426322937003
+		height = 150
+		channels = ['GPS','STARLINK']
+		[GroundSegment.GroundSistem.clone_VM]
+			name_VM = 'default'
+			username = 'ubuntu'
+			password = 'ubuntu'
+[Channel]
+	[[Channel.threshold]]
+		id = 'GPS'
+		inter-satellite_threshold = 0
+		Ground2Satellite_threshold = 50e6 
+	[[Channel.threshold]]
+		id = 'STARLINK'
+		inter-satellite_threshold = 5e6
+		Ground2Satellite_threshold = 10e6
