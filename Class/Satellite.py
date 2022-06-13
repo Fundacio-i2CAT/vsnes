@@ -4,7 +4,7 @@ from Class.Node import Node
 from czml import czml
 import math
 class Satellite(Node):
-	'''Specific node type witch the particularity  of has an orbit.'''
+	'''Specific node type which the particularity  of has an orbit.'''
 	#Each satellite have a unique Norad ID. The ID property save this code 
 	_id = None
 	
@@ -41,7 +41,7 @@ class Satellite(Node):
 		position.referenceFrame = 'INERTIAL'
 		#cartesian is a listr with the next format [time,x,y,z,time,x,y,z....,z]
 		cartesian = []
-		for datetime in datetime_vector:
+		for datetime in datetime_vector[0::3]:
 			#Loop through a vector of datetimes
 			#Append datetime
 			cartesian.append(datetime.isoformat())
@@ -72,7 +72,7 @@ class Satellite(Node):
 		#Defines pixelOffset from the Billboard
 		bb.pixelOffset = {"cartesian2":[0,0]}
 		#Defines color from the Billboard
-		bb.color = None
+		bb.color = 1.0
 		
 		#description = "<p>Ground Station %s:\n-ip address: %s\nPosition:\n-Latitud: %fº\n-Longitude: %fº\n-Height: %fm</p>"%(self.name,str(self._ip),self.position.latitude.degrees,self.position.longitude.degrees,self.position.elevation.m)
 		

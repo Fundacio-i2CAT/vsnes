@@ -1,5 +1,6 @@
 from Class.Scenario import scenario
 from datetime import datetime,timedelta
+import webbrowser
 
 import threading
 import time
@@ -11,6 +12,7 @@ stop_threads = False
 def run(Scenario,EMU,CESIUM):
 	global stop_threads
 	time.sleep(1)
+	webbrowser.open_new_tab('http://localhost:8081/')
 	n_connections = int(1+(Scenario.get_number_of_nodes()-1)*Scenario.get_number_of_nodes()/2)
 	queue = deque([], n_connections)
 	String = Scenario._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
@@ -73,16 +75,11 @@ def main():
 			for n in range(0,Scenario.get_number_of_nodes()):
 				print ('Node',n+1,": ",Scenario._node_list[n].name,"	",type(Scenario._node_list[n]).__name__,"	IP:",Scenario._node_list[n]._ip)
 		elif inp == 'run' or inp == 'run_all' or inp == 'run all':
-			Scenario.write_bash()
-			subprocess.call('./runtime_bash.sh')
-			global stop_threads
-			stop_threads = False
-			x = threading.Thread(target=run,args=(Scenario,True, False,))
-			x.start()
-			input("press enter to shutdown\n")
-			stop_threads = True
-			x.join()
-			Scenario.reset()
+			Scenario.start_scenario(True,True)
+		elif inp == 'emu' or inp == 'run_emu' or inp == 'run emu':
+			Scenario.start_scenario(True,False)
+		elif inp == 'cesium' or inp == 'run_cesium' or inp == 'run cesium':
+			Scenario.start_scenario(False,True)
 		elif inp == 'write_bash':
 			Scenario.write_bash()
 		elif inp == 'ssh' or inp == 'ssh_connection':

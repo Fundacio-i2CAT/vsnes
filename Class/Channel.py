@@ -13,7 +13,7 @@ class channel:
 	'''A channel object defines the delays between node'''
 	# The delay matrix property defines a matrix with de deay between a pair of nodes, if there aren't line of sight(LoS) the value is -1
 	_dalay_matrix = None
-	#The exist_channel property is a boolean witch defines if there are one pair of node with LoS 
+	#The exist_channel property is a boolean which defines if there are one pair of node with LoS 
 	_exist_channel = None
 	def __init__(self,channel):
 		self._dalay_matrix=[]
@@ -68,10 +68,10 @@ class channel:
 					nj = '%d%d:' %(n+1,j+1)
 					if delay == -1:
 						#If daley is equal to -1, the channel losses are defined of the 100%
-						subprocess.run(['tc','qdisc','change','dev',interface,'parent',n_j,'handle',nj,'netem','loss','100%'])
+						subprocess.run(['sudo','tc','qdisc','change','dev',interface,'parent',n_j,'handle',nj,'netem','loss','100%'])
 					elif delay != 0:
 						str_delay = '%fms' % (delay)
-						subprocess.run(['tc','qdisc','change','dev',interface,'parent',n_j,'handle',nj,'netem','delay',str_delay])
+						subprocess.run(['sudo','tc','qdisc','change','dev',interface,'parent',n_j,'handle',nj,'netem','delay',str_delay])
 				self._dalay_matrix[n][j] = delay
 	def delete(self):
 		#Delete the delay matrix

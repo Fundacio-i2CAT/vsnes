@@ -8,9 +8,11 @@ from ipaddress import IPv4Network
 from czml import czml
 import time
 import subprocess
+import webbrowser
 import threading
+from multiprocessing import Process
+import sys
 
-path_apache = '/var/www/SNES/'
 # class for the creation and management of nodes and channels. 
 class scenario:
 	'''A scenario load a configuration file and managed different classes'''
@@ -23,7 +25,7 @@ class scenario:
 	#nNodes property is the number of nodes that are loaded in the scenario
 	_nNodes = None
 	
-	#The time paeameters property defines a time_paramiters class witch control the time of the emulation
+	#The time paeameters property defines a time_paramiters class which control the time of the emulation
 	_time_parameters = None
 	
 	#Ip address is a list of the posible ip address that can be assigned to the nodes
@@ -53,15 +55,14 @@ class scenario:
 		SpaceSegment = TOMLfile['SpaceSegment']
 		for SatelliteSistem in SpaceSegment['SatelliteSistem']:
 			config_file = SatelliteSistem['TLE']
-			print(config_file)
 			satellites = load.tle_file(config_file)
-			print(satellites)
 			for sat in satellites:
 				self.AddSatellite(sat,SatelliteSistem,run_VM)
 		GroundSegment = TOMLfile['GroundSegment']
 		for GroundSistem in GroundSegment['GroundSistem']:
 			self.AddGroundStation(GroundSistem,run_VM)
-		#self.write_czml()
+		self.write_czml()
+		self.write_bash()
 	def AddSatellite(self,sat_czml,constallation,run_VM):
 		#Creates a Satellite object and add to the scenario
 		try:
@@ -138,52 +139,52 @@ class scenario:
 		w_runtime.write('#!/bin/sh\n')
 		w_shutdown.write('#!/bin/sh\n')
 		#Command to create a bridge with name brSATEMU
-		w_runtime.write('brctl addbr brSATEMU\nip link set dev brSATEMU up\n')
+		w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
 		#Command to delete the bridge
-		w_shutdown.write('ip link set dev brSATEMU down\nbrctl delbr brSATEMU\n')
+		w_shutdown.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
 		interface = self.interface
 		for n in range(1,self._nNodes+1):
 			#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
 			
 			# Define an interface in a VLAN
-			line_runtime = str('ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+			line_runtime = str('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
 			w_runtime.write(line_runtime)
 			#Set up
-			line_runtime = str('ip link set dev %s.%d up\n'%(interface,n))
+			line_runtime = str('sudo ip link set dev %s.%d up\n'%(interface,n))
 			w_runtime.write(line_runtime)
 			#Add the interface to the bridge
-			line_runtime = str('brctl addif brSATEMU %s.%d\n'%(interface,n))
+			line_runtime = str('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
 			w_runtime.write(line_runtime)
 			#Defines a tc qdisc root
-			line_runtime = str('tc qdisc add dev %s.%d root handle %d: htb\n'%(interface,n,n))
+			line_runtime = str('sudo tc qdisc add dev %s.%d root handle %d: htb\n'%(interface,n,n))
 			w_runtime.write(line_runtime)
 			#Delete the root of tc qdisc
-			line_shutdown = str('tc qdisc del dev %s.%d root handle %d: htb\n'%(interface,n,n))
+			line_shutdown = str('sudo tc qdisc del dev %s.%d root handle %d: htb\n'%(interface,n,n))
 			w_shutdown.write(line_shutdown)
 			# Delete the interface associated with the VLAN 
-			line_shutdown = str('ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+			line_shutdown = str('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
 			w_shutdown.write(line_shutdown)
 		#Creates one classid per node in every Vlan interface and define channel properties
 		for n in range(1,self._nNodes+1):
 			for j in range(1,self._nNodes+1):
 				#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
-				line_runtime = str('tc class add dev %s.%d parent %d: classid %d:%d htb rate 100mbit\n'%(interface,n,n,n,j))
+				line_runtime = str('sudo tc class add dev %s.%d parent %d: classid %d:%d htb rate 100mbit\n'%(interface,n,n,n,j))
 				w_runtime.write(line_runtime)
 				# Add the conditions of the channel
 				#Obtain the delay between the nodes n-1 and j-1
 				delay = self._channel.get_channel(n-1,j-1)
 				if delay == -1:
-					line_runtime = str('tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem loss 100'%(interface,n,n,j,n,j))
+					line_runtime = str('sudo tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem loss 100'%(interface,n,n,j,n,j))
 					line_runtime = line_runtime + '%\n'
 				else:
-					line_runtime = str('tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem delay %fms\n'%(interface,n,n,j,n,j,delay))
+					line_runtime = str('sudo tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem delay %fms\n'%(interface,n,n,j,n,j,delay))
 				w_runtime.write(line_runtime)
 				ip = self._ip_Address[j-1]
 				# Define filters according to the source ip 
-				line_runtime = str('tc filter add dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
+				line_runtime = str('sudo tc filter add dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
 				w_runtime.write(line_runtime)
 				# Delete the filters
-				line_shutdown = str('tc filter del dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
+				line_shutdown = str('sudo rtc filter del dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
 				#w_shutdown.write(line_shutdown)
 		# Close opened files
 		w_runtime.close()
@@ -199,25 +200,60 @@ class scenario:
 		exist_net = subprocess.run('virsh net-list | grep -c -w default', capture_output = True, text = True, shell = True).stdout
 		if int(exist_net) == 0:
 			subprocess.run(['virsh', 'net-start', 'default'])
-	def run(self,stop_threads,EMU,CESIUM):
-		print (self._time_parameters.get_date_time())
-		print ('-Delay SAT1->SAT2: ',self._channel.get_channel(0,1))
-		print ('-Delay SAT1->i2CAT: ',self._channel.get_channel(0,2))
-		print ('-Delay SAT2->i2CAT: ',self._channel.get_channel(1,2))
-		time.sleep(60*self._time_parameters.get_TimeInterval()/self.get_speed())
+	def start_scenario(self,EMU,CESIUM):
+		if CESIUM:
+			if EMU:
+				EMU_bool = 'true'
+			else:
+				EMU_bool = 'false'
+			timer_ms = self._time_parameters.get_TimeInterval()/self._time_parameters._contact_speed * 10**3
+			shell = 'gnome-terminal -t %s -- python3 Class/Server.py %s %f'%('Cesium Server',EMU_bool,timer_ms)
+			subprocess.run(shell, shell = True)
+			webbrowser.open_new_tab('http://localhost:5000/')
+		if EMU:
+			subprocess.call('./runtime_bash.sh')
+			n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
+			EMULADOR = Process(target=self.run,args=(EMU, CESIUM,n_connections))
+			EMULADOR.start()
+		
+		input("press enter to shutdown\n")
+		if EMU:
+			EMULADOR.terminate()
+			EMULADOR.join()
+			subprocess.call('./shutdown_bash.sh')
+			for _ in range(n_connections+3):
+				sys.stdout.write("\x1b[1A\x1b[2K")
+		self.reset()
+	def run(self,EMU,CESIUM,n_connections):
+		
+		time.sleep(1)
+		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
+		String = self._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
+		String += '\n'
+		for n in range(self._nNodes):
+			for j in range(n+1,self._nNodes):
+				String +=  '-Delay %s -> %s:	 %fms\n'%(self._node_list[n].name,self._node_list[j].name,self._channel.get_channel(n,j))
+		sys.stdout.write(String) # reprint the linesprint (String)
+		time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
 		while True:
-			if stop_threads:
-				break
 			if self.step(EMU,CESIUM):
 				print('The emulation is over: press enter to shutdown')
 				break
-			print (self._time_parameters.get_date_time())
-			print ('-Delay SAT1->SAT2: ',self._channel.get_channel(0,1))
-			print ('-Delay SAT1->i2CAT: ',self._channel.get_channel(0,2))
-			print ('-Delay SAT2->i2CAT: ',self._channel.get_channel(1,2))
-			#print (scenario.channel_matrix)
-			time.sleep(60*self._time_parameters.get_TimeInterval()/self.get_speed())
-		if EMU:subprocess.call('./shutdown_bash.sh')
+			String = self._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
+			String += '\n'
+			for n in range(self._nNodes):
+				for j in range(n+1,self._nNodes):
+					String +=  '-Delay %s -> %s:	 %fms\n'%(self._node_list[n].name,self._node_list[j].name,self._channel.get_channel(n,j))
+			for _ in range(n_connections):
+				sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
+			sys.stdout.write(String) # print the linesprint (String)
+			if CESIUM:
+				self.czml_doc.packets[0].clock['currentTime'] = self._time_parameters.get_date_time().isoformat()
+				self.czml_doc.packets[0].clock['multiplier'] = self._time_parameters.get_speed()
+			time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
+
+		for _ in range(n_connections+1):
+			sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
 	def delete_VMs (self):
 		for n in range(0,self._nNodes):
 			self._node_list[n].delete_VM()
@@ -234,7 +270,7 @@ class scenario:
 		return False	 		
 	def write_czml (self):
 		# Initialize a document
-		doc = czml.CZML()
+		self.czml_doc = czml.CZML()
 		# Create and append the document packet
 		ID = 'document'
 		name = 'Satellite Network Emulator'
@@ -242,9 +278,9 @@ class scenario:
 		interval = self._time_parameters.get_interval()
 		currentTime = self._time_parameters.get_date_time().isoformat()
 		multiplier = self._time_parameters.get_speed()
-		clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = None,step = None)
+		clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'UNBOUNDED',step = 'SYSTEM_CLOCK_MULTIPLIER')
 		packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
-		doc.packets.append(packet1)
+		self.czml_doc.packets.append(packet1)
 		
 		processes = []
 		czml_nodes = []
@@ -264,29 +300,12 @@ class scenario:
 				x.start()
 				processes.append(x)
 				index +=1
-		'''	
-		for channel in self._channel.czml_channels(self._time_parameters.datetime_vector,self._node_list):
-			doc.packets.append(channel)'''
+		
 		for process in processes:
 			process.join()
 		for result in results:
 			if result is not None:
-				doc.packets.append(result)
-		'''print (len(czml_nodes))
-		for czmlPacket in czml_nodes:
-			doc.packets.append(czmlPacket)
-		print (len(czml_channels))
-		for czmlPacket in czml_channels:
-			doc.packets.append(czmlPacket)'''
-		'''
-		# Create and append a billboard packet
-		packet2 = czml.CZMLPacket(id='billboard')
-		bb = czml.Billboard(scale=0.7, show=True)
-		bb.image = 'http://localhost/img.png'
-		bb.color = {'rgba': [0, 255, 127, 55]}
-		packet2.billboard = bb
-		doc.packets.append(packet2)
-		'''
+				self.czml_doc.packets.append(result)
 		# Write the CZML document to a file
-		filename = path_apache+"test.czml"
-		doc.write(filename)
+		filename = "Class/templates/test.czml"
+		self.czml_doc.write(filename)

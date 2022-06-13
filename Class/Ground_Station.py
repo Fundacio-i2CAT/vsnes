@@ -3,7 +3,7 @@ from Class.Node import Node
 from skyfield.api import wgs84
 from czml import czml
 class GroundStation(Node):
-	'''Specific node type witch the particularity  of a static position in the Earth surface.'''
+	'''Specific node type which the particularity  of a static position in the Earth surface.'''
 		
 	def __init__(self,TOML_GS,network,mask, nNodes):
 		# Creates a GroundStation class object from three configuration lines
@@ -32,7 +32,7 @@ class GroundStation(Node):
 		#Defines pixelOffset from the Billboard
 		bb.pixelOffset = {"cartesian2":[0,0]}
 		#Defines color from the Billboard
-		bb.color = None
+		bb.color = 1.0
 		
 		
 		#Create a object of clas Position

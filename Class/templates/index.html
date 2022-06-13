@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <link rel='icon'href=data:;" />
+  <meta charset="utf-8">
+  <title>{{data.title}}</title>
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <div id="cesiumContainer"></div>
+
+  <script>
+  
+    function Reload(){
+    	czml.load('test.czml');
+    }
+    // Your access token can be found at: https://cesium.com/ion/tokens.
+    // This is the default access token from your ion account
+
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMjUxZDk4OS1lMzdiLTQ3OTAtYWQ3Ny03OTE0OTYzNjlmNTEiLCJpZCI6ODg3OTIsImlhdCI6MTY0OTQwNTI4Mn0.nvrvhF553Lce6ANNU9r5U9HTwXD10Vq4IOdf32kGiIc';
+
+    // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+
+      terrainProvider: Cesium.createWorldTerrain()
+
+    });
+    let czml = new Cesium.CzmlDataSource();
+    let elementos = czml.load('test.czml');
+    viewer.dataSources.add(elementos);
+    if ({{data.EMU}}){
+      viewer.animation.destroy();
+      viewer.timeline.destroy();
+      viewer.clock.shouldAnimate = true;
+      window.setInterval(Reload,{{data.timer}});
+    }
+    window.setInterval(Reload,{{data.timer}});
+    
+  </script>
+
+ </div>
+
+</body>
+
+</html>

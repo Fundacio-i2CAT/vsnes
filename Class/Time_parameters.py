@@ -5,7 +5,7 @@ ts = load.timescale()
 
 class time_parameters:
 	'''The time_parameters class define how the instant of time change during the emulation'''
-	#The TimeInterval is a float witch inticate the minute elapse between every step of time
+	#The TimeInterval is a float which inticate the minute elapse between every step of time
 	_TimeInterval = None	#[min]
 	
 	#The contact_speed property defines the relation of the emulation time with the real one when exit contact at least between two nodes
@@ -76,7 +76,7 @@ class time_parameters:
 		#Return the first position of datetime_vector
 		return self._datetime_vector[0]
 	def get_date_time(self):
-		#Return the position of datetime_vector witch the emulation is
+		#Return the position of datetime_vector which the emulation is
 		return self._datetime_vector[self._marker]
 	def get_end_date_time(self):
 		#Return the last position of datetime_vector

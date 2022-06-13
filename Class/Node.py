@@ -12,7 +12,7 @@ class Node:
 	
 	#The nodeNumber is the position of the node in the list of node. This count starts in 1 insted of 0
 	_nodeNumber = None
-	#The ip property indicates the ip address witch the VM is connected to the VLAN
+	#The ip property indicates the ip address which the VM is connected to the VLAN
 	_ip = None
 	
 	#The mask property indicates the the mask of the VLAN network address 
@@ -114,7 +114,7 @@ class Node:
 		subprocess.run(shell, capture_output = True, shell = True)
 		shell = 'virsh destroy %s'%(self._name)
 		subprocess.run(shell, shell = True)
-		shell = 'find %s -type f -name %s*.qcow2 -delete'%(path,self._name)
+		shell = 'sudo find %s -type f -name %s*.qcow2 -delete'%(path,self._name)
 		subprocess.run(shell, shell = True)
 	def ssh_connection(self):
 		#Open a terminal with ssh connection to the VM
