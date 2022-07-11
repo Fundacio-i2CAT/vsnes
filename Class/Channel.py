@@ -29,8 +29,8 @@ class channel:
 		for n in range(0,nNodes-1):
 			#Add a new position with the daley of the node n and the new node
 			#Calcule the delay betwwen a pair of nodes
-			LoS, delay = self._Define_Channel(node_list[n],node_list[nNodes-1],date_time)
-			if not(self._exist_channel) and LoS:
+			delay = self._Define_Channel(node_list[n],node_list[nNodes-1],date_time)
+			if not(self._exist_channel) and delay != -1:
 				#Check if exist some channel
 				self._exist_channel = True
 			#Append the dealy between the nodes in the row of the n node to the delay matrix
@@ -47,8 +47,8 @@ class channel:
 		old_matrix = self._dalay_matrix
 		#Restart the Boolean to False
 		self._exist_channel = False
-		#Compare all the nodes between them
 		delay = None
+		#Compare all the nodes between them
 		for n in range(0,nNodes):
 			marker = 0
 			for j in range(0,nNodes):
@@ -57,8 +57,8 @@ class channel:
 					delay = self._dalay_matrix[j][n]
 				elif j > n:
 					#If j is bigger than n, it calcule the delay between the nodes in the new datetime
-					LoS, delay = self._Define_Channel(node_list[n],node_list[j],date_time)
-					if LoS and not(self._exist_channel):
+					delay = self._Define_Channel(node_list[n],node_list[j],date_time)
+					if delay != -1 and not(self._exist_channel):
 						#Check if exist some channel
 						self._exist_channel = True
 				if EMU and old_matrix[n][j]!=delay and n != j:
@@ -113,22 +113,21 @@ class channel:
 		if type(node).__name__ == "Satellite" and type(other).__name__ == "Satellite":
 			threshold = self.threshold_vector[threshold_pos].get_Satellite2Satellite()
 			#Compute the delay between two satellites
-			LoS, delay = self._Satellite2Satellite(node.get_ECI(date_time),other.get_ECI(date_time),threshold)
+			delay = self._Satellite2Satellite(node.get_ECI(date_time),other.get_ECI(date_time),threshold)
 			 
 		elif type(node).__name__ != "Satellite" and type(other).__name__ == "Satellite":
 			#Compute the delay between a Satellite and a Ground Station
 			threshold = self.threshold_vector[threshold_pos].get_Ground2Satellite()
-			LoS, delay = self._GroundBase2Satellite(other,node,0,threshold,date_time)
+			delay = self._GroundBase2Satellite(other,node,0,threshold,date_time)
 			
 		elif type(node).__name__ == "Satellite" and type(other).__name__ != "Satellite":
 			threshold = self.threshold_vector[threshold_pos].get_Ground2Satellite()
 			#Compute the delay between a Satellite and a Ground Station
-			LoS, delay = self._GroundBase2Satellite(node,other,0,threshold,date_time)
+			delay = self._GroundBase2Satellite(node,other,0,threshold,date_time)
 		else:
 			#The emulator not interconnec two Graund Stations between them
-			LoS = False
 			delay = -1
-		return LoS, delay
+		return delay
 	def _GroundBase2Satellite(self, SAT ,GS ,MinAngle,threshold,date_time):
 		#Compute the delay between a Ground Station and a Satellite
 		#Load a timescale in the datetime
@@ -140,13 +139,11 @@ class channel:
 		alt, az, distance = topocentric.altaz()
 		if (alt.degrees >= MinAngle) and distance.m < threshold:
 			#Check if the altitud angle is higher than a minimum (default 0º) and the distance lower than a threshold
-			LoS = True
 			#Compute the delay in ms in the ideal situation where the propagation speed is the light speed
 			delay = distance.m/c*1e3
 		else:
-			LoS = False
 			delay = -1
-		return LoS, delay
+		return delay
 	def _Satellite2Satellite(self,ECI1,ECI2,threshold):
 		#Compute the delay between two Satellite nodes
 		#Find the angle of the cone
@@ -165,17 +162,54 @@ class channel:
 		if diff_angle > theta and threshold > diff_norm:
 			#Compute the delay in ms in the ideal situation where the propagation speed is the light speed
 			delay = diff_norm/c*1e3
-			return True,delay
+			return delay
 		else:
 			#In this case, we need to check wether destination is further from the distance to the cone base (i.e. no line of sight) or closer to the cone vertex (i.e. has line of sight)
 			#Compute the length of the cone diagonal (i.e. distance from source to sphere tangent point)
 			h = norm1-Er
 			if diff_norm > h:
-				return False,-1
+				return -1
 			elif threshold > diff_norm:
 				#Compute the delay in ms in the ideal situation where the propagation speed is the light speed
 				delay = diff_norm/c*1e3
-				return True,delay
+				return delay
+	def _emu_czml_channel(self,node1,node2):
+
+		#Defines the name and the id of the new packet. (e.j, ID = Node1.name-to-Node2.name)
+		ID =  '%s-to-%s'%(node1.name,node2.name)
+		name = '%s to %s'%(node1.name,node2.name)
+		#Create a object of clas CZMLPacket
+		channel = czml.CZMLPacket(id= ID ,name=name)
+		
+		#Create a object of clas Color
+		color = czml.Color()
+		#Defines rgba from the Color
+		color.rgba = [0,255,0,255]
+		#Create a object of clas SolidColor
+		solidColor = czml.SolidColor()
+		#Defines color from the SolidColor
+		solidColor.color = color
+		#Create a object of clas Material
+		material = czml.Material()
+		#Defines solidColor from the Material
+		material.solidColor= solidColor
+		#Defines the referen of the position like the position of the a pair of nodes
+		references = ['%s#position'%(node1.name),'%s#position'%(node2.name)]
+		#Create a object of clas Position with the refereces defined
+		position = czml.Positions(references=references)
+		#Create a object of clas Polyline
+		polyline = czml.Polyline()
+		polyline.show = True
+		#Defines positions from the Polyline
+		polyline.positions = position
+		#Defines material from the Polyline
+		polyline.material = material
+		#Defines width from the Polyline
+		polyline.width = 1
+		polyline.followSurface = False
+		#Defines polyline from the CZMLPacket
+		channel.polyline = polyline
+		return channel
 	def czml_channels(self,datetime_vector,node1,node2,results,index):
 		#Return a CZMLPacket objects
 		#Defines the name and the id of the new packet. (e.j, ID = Node1.name-to-Node2.name)
@@ -185,48 +219,51 @@ class channel:
 		channel = czml.CZMLPacket(id= ID ,name=name)
 		
 		Any_channel = False
-		#colors = []
-		#Create a object of clas Color
+		#Create a object of clas Polyline
 		polyline = czml.Polyline()
 		#Defines show from the Polyline like a list
 		polyline.show = []
 		#last_change save the last datetime when the state of LoS has changed
 		last_change = datetime_vector[0].isoformat()
 		#previous_LoS is a boolean that define if there is line of sigth in the previous datetime
-		previous_LoS, delay = self._Define_Channel(node1,node2,datetime_vector[0])
+		previous_delay = self._Define_Channel(node1,node2,datetime_vector[0])
+		StrDescription = "<h2>Access times</h2><table class='sky-infoBox-access-table'><tr><th>Start</th><th>End</th>"
 		#The loop search the intervals when there is line of sigth and when there isn't
 		for datetime in datetime_vector[1:]:
 			#Calcul is there is a LoS
-			LoS, delay = self._Define_Channel(node1,node2,datetime)
-			if LoS and not(previous_LoS):
+			delay = self._Define_Channel(node1,node2,datetime)
+			if delay != -1 and previous_delay == -1:
 				#When current LoS is different than the previus and True, close a false interval with the datetime in last_change and the value of datetime 
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":False}
 				polyline.show.append(show)
 				#update last_change
 				last_change = datetime.isoformat()
-			elif LoS != previous_LoS:
+			elif delay == -1 and previous_delay != -1:
 				#When current LoS is different than the previus and False, close a true interval with the datetime in last_change and the value of datetime
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":True}
+				StrDescription += "<tr><td>%s</td><td>%s</td></tr>"%(last_change.split('+')[0].replace('T',' '),datetime.isoformat().split('+')[0].replace('T',' '))
 				#color = {"interval":last_change+'/%s'%datetime.isoformat(),"rgba":[0,255,0,255]}
 				#colors.append(color)
 				polyline.show.append(show)
 				#update last_change
 				last_change = datetime.isoformat()
 				Any_channel = True
-			elif datetime == datetime_vector[-1] and LoS:
+			elif datetime == datetime_vector[-1] and delay != -1:
 				#When we check all the datetimes of the emulation, it closes the last interval.In that case with a True interval
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":True}
+				StrDescription += "<tr><td>%s</td><td>%s</td></tr></table>"%(last_change.split('+')[0].replace('T',' '),datetime.isoformat().split('+')[0].replace('T',' '))
 				#color = {"interval":last_change+'/%s'%datetime.isoformat(),"rgba":[0,255,0,255]}
 				#colors.append(color)
 				Any_channel = True
 				polyline.show.append(show)
-			elif datetime == datetime_vector[-1] and not(LoS):
+			elif datetime == datetime_vector[-1] and delay == -1:
 				#When we check all the datetimes of the emulation, it closes the last interval.In that case with a False interval
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":False}
 				polyline.show.append(show)
 			#Update previous_LoS
-			previous_LoS = LoS
+			previous_delay = delay
 		if Any_channel:
+			description = czml.Description(StrDescription)
 			#Create a object of clas Color
 			color = czml.Color()
 			#Defines rgba from the Color
@@ -249,8 +286,9 @@ class channel:
 			polyline.material = material
 			#Defines width from the Polyline
 			polyline.width = 1
-			
+			polyline.followSurface = False
 			#Defines polyline from the CZMLPacket
 			channel.polyline = polyline
+			channel.description = description
 			results[index] = channel
 			return channel

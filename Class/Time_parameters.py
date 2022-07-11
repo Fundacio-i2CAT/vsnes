@@ -5,7 +5,7 @@ ts = load.timescale()
 
 class time_parameters:
 	'''The time_parameters class define how the instant of time change during the emulation'''
-	#The TimeInterval is a float which inticate the minute elapse between every step of time
+	#The TimeInterval is a timedelta which inticate the minute elapse between every step of time
 	_TimeInterval = None	#[min]
 	
 	#The contact_speed property defines the relation of the emulation time with the real one when exit contact at least between two nodes
@@ -23,8 +23,8 @@ class time_parameters:
 	def __init__(self,TOMLTime):
 		#Save in variable the information of TOML file related with time 
 		TimeInterval = TOMLTime['TimeInterval']
-		contact_speed = TOMLTime['MinSpeed']
-		non_contact_speed = TOMLTime['MaxSpeed']
+		contact_speed = TOMLTime['Contact_speed']
+		non_contact_speed = TOMLTime['Non_contact_speed']
 		start_date_time = TOMLTime['start_datetime']
 		end_date_time = TOMLTime['end_datetime']
 		#Check if the value is correct. TimeInterval have to be greater than 0

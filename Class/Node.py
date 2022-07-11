@@ -10,7 +10,7 @@ class Node:
 	#Each node has a name property identifying the object it is describing
 	_name = None
 	
-	#The nodeNumber is the position of the node in the list of node. This count starts in 1 insted of 0
+	#The nodeNumber is the position of the node in the list of node. This count starts in 1 instead of 0
 	_nodeNumber = None
 	#The ip property indicates the ip address which the VM is connected to the VLAN
 	_ip = None
@@ -27,11 +27,11 @@ class Node:
 	#The password property indicates the password of the clone_VM
 	_password = None
 	
-	#The position property define the position in a concret instat of time
+	#The position property define the position in a specific instat of time
 	_position = None
 	
 	def __init__(self,name,channels,cloneVM,network,mask,nNodes):
-		self._name = name
+		self._name = name.replace(' ','_').replace('/','-')
 		self._nodeNumber = nNodes+1
 		self._ip = network
 		self.channels = channels
@@ -43,7 +43,9 @@ class Node:
 	def name(self):
 		if self._name is not None:
         		return self._name
-        		
+        				
+	def get_basic_data(self):
+        	return '%s (ip:%s)'%(self._name,self._ip)
 	def _get_VM_ip(self):
 		#Search the ip of the VM associated to the node and return them
 		while True:
@@ -107,33 +109,53 @@ class Node:
 		#Run the initial configuration with SSH
 		self._initial_configuration()
 	def delete_VM(self):
-		#Delete the VM and the its images
-		shell = 'virsh shutdown %s'%(self._name)
-		subprocess.run(shell, capture_output = True, shell = True)
-		shell = 'virsh undefine %s'%(self._name)
-		subprocess.run(shell, capture_output = True, shell = True)
-		shell = 'virsh destroy %s'%(self._name)
-		subprocess.run(shell, shell = True)
-		shell = 'sudo find %s -type f -name %s*.qcow2 -delete'%(path,self._name)
-		subprocess.run(shell, shell = True)
+		name = self._name
+		#Search a VM with the name of the node
+		VM_status = subprocess.run('virsh list --all | grep -w %s'%(name), capture_output = True, text = True, shell = True).stdout
+		if len(VM_status)>0:
+			#Delete the VM and the its images
+			shell = 'virsh shutdown %s'%(self._name)
+			subprocess.run(shell, capture_output = True, shell = True)
+			shell = 'virsh undefine %s'%(self._name)
+			subprocess.run(shell, capture_output = True, shell = True)
+			shell = 'virsh destroy %s'%(self._name)
+			subprocess.run(shell, shell = True)
+			shell = 'sudo find %s -type f -name %s*.qcow2 -delete'%(path,self._name)
+			subprocess.run(shell, shell = True)
 	def ssh_connection(self):
 		#Open a terminal with ssh connection to the VM
-		#Count the number of terminals that are open
-		Terminals = subprocess.run('ls /dev/pts', capture_output = True, text = True, shell = True).stdout.split()
-		nTerminals_before = len(Terminals)
-		#Get the ip addres of the VM
-		VM_ip = self._get_VM_ip()
-		#Try to connect to the VM with sshpass
-		shell = 'gnome-terminal -t %s -- sshpass -p %s ssh %s@%s'%(self._name,self._password,self._username,VM_ip)
-		subprocess.run(shell, shell = True)
-		time.sleep(0.1)
-		#Count the number of terminals that are open
-		Terminals = subprocess.run('ls /dev/pts', capture_output = True, text = True, shell = True).stdout.split()
-		nTerminals = len(Terminals)
-		if nTerminals_before == nTerminals:
-			#Check if the terminal open with sshpass still opened. If it's not true, it open a new with ssh connection 
-			shell = 'gnome-terminal -t %s -- ssh %s@%s'%(self._name,self._username,VM_ip)
+		if self.check_VM():
+			#Count the number of terminals that are open
+			Terminals = subprocess.run('ls /dev/pts', capture_output = True, text = True, shell = True).stdout.split()
+			nTerminals_before = len(Terminals)
+			#Get the ip addres of the VM
+			VM_ip = self._get_VM_ip()
+			#Try to connect to the VM with sshpass
+			shell = 'gnome-terminal -t %s -- sshpass -p %s ssh %s@%s'%(self._name,self._password,self._username,VM_ip)
 			subprocess.run(shell, shell = True)
+			time.sleep(0.1)
+			#Count the number of terminals that are open
+			Terminals = subprocess.run('ls /dev/pts', capture_output = True, text = True, shell = True).stdout.split()
+			nTerminals = len(Terminals)
+			if nTerminals_before == nTerminals:
+				#Check if the terminal open with sshpass still opened. If it's not true, it open a new with ssh connection 
+				shell = 'gnome-terminal -t %s -- ssh %s@%s'%(self._name,self._username,VM_ip)
+				subprocess.run(shell, shell = True)
+		else:
+			print("The %s's VM is not available. It doesn't exist or is shut off"%(self._name))
+	def check_VM(self):
+		name = self._name
+		#Search a VM with the name of the node
+		VM_status = subprocess.run('virsh list --all | grep -w %s'%(name), capture_output = True, text = True, shell = True).stdout
+		if len(VM_status)>0:
+			#If the VM exist cheak its state and start it if it is necesarry
+			VM_status = VM_status.split()[2]
+			if VM_status == 'shut' or VM_status == 'paused':
+				return False
+			else:
+				return True
+		else:
+			return False
 	def get_ECEF(self):
 		#Return the last saved position in ECEF[m]
 		return self._position.itrs_xyz.m

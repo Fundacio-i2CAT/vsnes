@@ -13,11 +13,11 @@ def index():
 	}
 	print (data)
 	return render_template('index.html',data = data)
-@app.route('/test.czml')
+@app.route('/ScenarioCZML.czml')
 def czmlData():
-	return render_template('test.czml')
+	return render_template('ScenarioCZML.czml')
 
 EMU_bool = sys.argv[1]
 timer_ms = sys.argv[2]
 
-app.run()
+app.run(debug=True, port=5000)

@@ -15,14 +15,17 @@ class GroundStation(Node):
 		clone_VM = TOML_GS['clone_VM']
 		self._position = wgs84.latlon(latitude,longitude,height)
 		Node.__init__(self,name = name,channels = channels,cloneVM = clone_VM,network = network, mask = mask,nNodes = nNodes)
-	def update_position(self,date_time):
-		#No update nothing because is a static node
-		pass
+	def description(self):
+		description = '<h3>Ground Station %s (ip:%s)</h3>'%(self._name,self._ip)
+		description += '<p>Latitud: %fº</p>\n'%(self._position.latitude.degrees)
+		description += '<p>Longitude: %fº</p>\n'%(self._position.longitude.degrees)
+		description += '<p>Height: %d m</p>\n'%(self._position.elevation.m)
+		return description
 	def czml_node(self,datetime_vector,results,index):
 		#Return object of type CZMLPacket
 		#Create a object of clas CZMLPacket
-		GS = czml.CZMLPacket(id=self.name,name=self.name)
-		
+		GS = czml.CZMLPacket(id=self.name)
+		#,name=self.name
 		#Create a object of clas Billboard
 		bb = czml.Billboard(scale=1.5, show=True)
 		#Defines image from the Billboard
@@ -42,7 +45,7 @@ class GroundStation(Node):
 		#Defines cartesian from the position
 		position.cartesian =[ECEF[0],ECEF[1],ECEF[2]]
 		
-		description = "<p>Ground Station %s:\n-ip address: %s\nPosition:\n-Latitud: %fº\n-Longitude: %fº\n-Height: %fm</p>"%(self.name,str(self._ip),self._position.latitude.degrees,self._position.longitude.degrees,self._position.elevation.m)
+		#description = "<p>Ground Station %s:\n-ip address: %s\nPosition:\n-Latitud: %fº\n-Longitude: %fº\n-Height: %fm</p>"%(self.name,str(self._ip),self._position.latitude.degrees,self._position.longitude.degrees,self._position.elevation.m)
 		
 		#Create a object of clas Label
 		label_text = '%s\n(ip:%s)'%(self.name,str(self._ip))
@@ -56,6 +59,8 @@ class GroundStation(Node):
 		#Defines pixelOffset from the Label
 		label.pixelOffset = {"cartesian2":[30,20]}
 		
+		description = czml.Description(self.description())
+		
 		#GS.description=str("Hello World")
 		#Defines billboard from the CZMLPacket
 		GS.billboard = bb
@@ -63,6 +68,8 @@ class GroundStation(Node):
 		GS.position = position
 		#Defines label from the CZMLPacket
 		GS.label = label
-		#GS.description = description
+		
+		GS.description = description
+		
 		results[index] = GS
 		return GS

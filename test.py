@@ -27,7 +27,7 @@ class ScenarioTestCAse(unittest.TestCase):
 			#Open file
 			fo = open('test.toml', "r")
 			self.TOMLfile = toml.load(fo, _dict=dict)
-			self.scenarioTest = scenario(self.TOMLfile,False)
+			self.scenarioTest = scenario(self.TOMLfile)
 			# Close opened file
 			fo.close()
 	def test_AddSatellite(self):
@@ -37,18 +37,12 @@ class ScenarioTestCAse(unittest.TestCase):
 				config_file = SatelliteSistem['TLE']
 				satellites = load.tle_file(config_file)
 				for sat in satellites:
-					self.scenarioTest.AddSatellite(sat,SatelliteSistem,False)
+					self.scenarioTest.AddSatellite(sat,SatelliteSistem)
 			self.assertEqual(self.scenarioTest.get_number_of_nodes(),2)	
 	def test_AddGroundStation(self):
 		with HiddenPrints():
-			self.scenarioTest.AddGroundStation(self.TOMLfile['GroundSegment']['GroundSistem'][0],False)
+			self.scenarioTest.AddGroundStation(self.TOMLfile['GroundSegment']['GroundSistem'][0])
 			self.assertEqual(self.scenarioTest.get_number_of_nodes(),2)		
-	def test_update(self):
-		self.scenarioTest._update()
-	def test_delete(self):
-		self.scenarioTest.delete()
-		self.assertEqual(len(self.scenarioTest._node_list),0)
-		self.assertEqual(self.scenarioTest._nNodes,0)
 	def test_step(self):
 		self.assertFalse(self.scenarioTest.step())
 		self.assertEqual(self.scenarioTest._time_parameters._marker,1)
@@ -67,14 +61,15 @@ class ScenarioTestCAse(unittest.TestCase):
 	def test_get_number_of_nodes(self):
 		self.assertEqual(self.scenarioTest.get_number_of_nodes(),2)
 	def test_write_czml(self):
-		self.scenarioTest.write_czml()
+		with HiddenPrints():
+			self.scenarioTest.write_czml()
 class ChannelTestCAse(unittest.TestCase):
 	def setUp(self):
 		with HiddenPrints():
 			#Open file
 			fo = open('test.toml', "r")
 			self.TOML = toml.load(fo, _dict=dict)
-			self.scenarioTest = scenario(self.TOML,False)
+			self.scenarioTest = scenario(self.TOML)
 			# Close opened file
 			fo.close()
 	def test_delete(self):

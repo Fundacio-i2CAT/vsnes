@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+
 from Class.Orbit import Orbit
 from Class.Node import Node
 from czml import czml
+
 import math
+from sgp4 import exporter
+from datetime import datetime,timedelta
 class Satellite(Node):
 	'''Specific node type which the particularity  of has an orbit.'''
 	#Each satellite have a unique Norad ID. The ID property save this code 
@@ -26,10 +30,14 @@ class Satellite(Node):
 		return self._orbit._TLE
 	def get_ECI(self,datetime):
 		return self._orbit._ECI(datetime)
-	def update_position(self,datetime):
-		#Update the position of the node from a specific datetime
-		self._position = self._orbit.get_position(datetime)
-	def czml_position(self,datetime_vector):
+	def description (self):
+		description = '<h3>Satellite %s(%s) (ip:%s)</h3>'%(self._name,self._id,self._ip)
+		TLE = self._orbit._TLE.model
+		line1, line2 = exporter.export_tle(TLE)
+		description += '<p><small>%s</small></p>\n'%(line1)
+		description += '<p><small>%s</small></p>\n'%(line2)
+		return description		
+	def _czml_positions(self,datetime_vector):
 		#Return a czml object of type position
 		#Create a object of clas Position
 		position = czml.Position()
@@ -39,25 +47,27 @@ class Satellite(Node):
 		position.interpolationDegree = 5
 		#Defines referenceFrame from the position
 		position.referenceFrame = 'INERTIAL'
-		#cartesian is a listr with the next format [time,x,y,z,time,x,y,z....,z]
+		#cartesian is a list with the next format [time,x,y,z,time,x,y,z....,z]
 		cartesian = []
-		for datetime in datetime_vector[0::3]:
+		Period = 2*math.pi/self._orbit._TLE.model.no_kozai
+		post_datetime = datetime_vector[-1]+timedelta(minutes=Period+15)
+		date_time = datetime_vector[0]
+		while date_time < post_datetime:
 			#Loop through a vector of datetimes
 			#Append datetime
-			cartesian.append(datetime.isoformat())
+			cartesian.append(date_time.isoformat())
 			#Calcule the ECI position in the datetime
-			ECI = self._orbit._ECI(datetime)
+			ECI = self._orbit._ECI(date_time)
 			#Append x-axis
 			cartesian.append(ECI[0])
 			#Append y-axis
 			cartesian.append(ECI[1])
 			#Append z-axis
 			cartesian.append(ECI[2])
+			date_time += timedelta(minutes=15)
 		#Defines cartesian from the position
 		position.cartesian = cartesian
-		return position
-	
-	
+		return position	
 	def czml_node(self,datetime_vector,results,index):
 		#Return object of type CZMLPacket
 		#Create a object of clas CZMLPacket
@@ -91,7 +101,8 @@ class Satellite(Node):
 		#Create a object of clas Path
 		path = czml.Path()
 		#Defines show from the Path
-		path.show = [{"interval":datetime_vector[0].isoformat()+'/'+datetime_vector[-1].isoformat(),"boolean":True}]
+		path.show = True
+		#path.show = [{"interval":datetime_vector[0].isoformat()+'/'+datetime_vector[-1].isoformat(),"boolean":True}]
 		#Defines width from the Path
 		path.width = 1
 		#Defines resolution from the Path
@@ -114,10 +125,12 @@ class Satellite(Node):
 		#Defines leadTime from the Path
 		path.leadTime = Period
 		#Defines trailTime from the Path
-		path.trailTime = Period
+		path.trailTime = 0
 		
 		#Create and defines a object of clas Position
-		position = self.czml_position(datetime_vector)
+		position = self._czml_positions(datetime_vector)
+		
+		description = czml.Description(self.description())
 		
 		#Defines billboard from the CZMLPacket
 		SAT.billboard = bb
@@ -128,6 +141,6 @@ class Satellite(Node):
 		#Defines position from the CZMLPacket
 		SAT.position = position
 		
-		#SAT.description = description
+		SAT.description = description
 		results[index] = SAT
 		return SAT
