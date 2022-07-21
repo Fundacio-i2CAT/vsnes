@@ -19,17 +19,20 @@ class Satellite(Node):
 	def id(self):
 		return self._id
 	
-	def __init__(self,sat,constallation,network,mask,nNodes):
+	def __init__(self,sat,constallation,network,mask,nNodes,datetime_vector):
 		# Creates a satellite class object from three configuration lines
 		self._id = sat.model.satnum
 		self._orbit = Orbit(sat)
 		Node.__init__(self,name = sat.name,channels = constallation['channels'], cloneVM = constallation['clone_VM'],network = network,mask = mask,nNodes = nNodes)
+		self._ECI,self._ECEF = self._orbit._vectors(datetime_vector)
 	
 	def get_TLE (self):
 		#Return the skyfield object TLE
 		return self._orbit._TLE
-	def get_ECI(self,datetime):
-		return self._orbit._ECI(datetime)
+	def get_ECI(self,marker):
+		return self._ECI[marker]
+	def get_ECEF(self,marker):
+		return self._ECEF[marker]
 	def description (self):
 		description = '<h3>Satellite %s(%s) (ip:%s)</h3>'%(self._name,self._id,self._ip)
 		TLE = self._orbit._TLE.model

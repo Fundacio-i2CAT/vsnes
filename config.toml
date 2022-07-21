@@ -1,9 +1,9 @@
 [Time]
 	# min
 	TimeInterval = 0.5
-	MinSpeed = 5
-	MaxSpeed = 60
-	start_datetime = '2022-05-20 04:30:00'
+	Contact_speed = 5
+	Non_contact_speed = 60
+	start_datetime = '2022-05-20 04:15:00'
 	end_datetime = '2022-05-20 06:30:00'
 [Network]
 	interface =  'virbr0'
@@ -34,5 +34,5 @@
 		Ground2Satellite_threshold = 50e6 
 	[[Channel.threshold]]
 		id = 'STARLINK'
-		inter-satellite_threshold = 5e6
-		Ground2Satellite_threshold = 10e6
+		inter-satellite_threshold = 1.5e6
+		Ground2Satellite_threshold = 40e6

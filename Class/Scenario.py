@@ -15,6 +15,7 @@ import webbrowser
 import threading
 from multiprocessing import Process
 import sys
+import os
 ip_Address = []
 Network = None
 # class for the creation and management of nodes and channels. 
@@ -64,14 +65,16 @@ class scenario:
 		# Read an existing CZML file
 		filename = 'Class/templates/ScenarioCZML.czml'
 		with open(filename, 'r') as example:
-			self.czml_doc = czml.CZML()
-			self.czml_doc.loads(example.read())
-		self.czml_doc
+			if os.stat(filename).st_size == 0:
+				self.write_czml()
+			else:
+				self.czml_doc = czml.CZML()
+				self.czml_doc.loads(example.read())
 	def AddSatellite(self,sat_toml,constallation):
 		#Creates a Satellite object and add to the scenario
 		try:
 			#Creade a Satellite Node
-			SAT = Satellite(sat_toml,constallation,ip_Address[self._nNodes],Network.netmask,self._nNodes)
+			SAT = Satellite(sat_toml,constallation,ip_Address[self._nNodes],Network.netmask,self._nNodes,self._time_parameters.get_datetimes())
 			#Check if the node exist yet
 			if self.Exist_Node(SAT):
 				print ("- Satellite %s: NOT ACCEPTED"%(SAT.name))
@@ -82,7 +85,7 @@ class scenario:
 				#Add 1 to the  node counter
 				self._nNodes += 1
 				#Add a new node to the channel
-				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_date_time())
+				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker)
 		except IndexError:
 			print ('Maximum number of nodes exceeded: Node NOT ACCEPTED')
 			return
@@ -103,7 +106,7 @@ class scenario:
 				#Add 1 to the node counter	
 				self._nNodes += 1
 				#Add a new node to the channel
-				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_date_time())
+				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker)
 		except IndexError:
 			print ('Maximum number of nodes exceeded: Node NOT ACCEPTED')
 			return	
@@ -113,14 +116,12 @@ class scenario:
 			self.reset()
 			return True
 		else:
-			datetime = self._time_parameters.get_date_time()
-			self._channel.update(self._node_list,self._nNodes,datetime,EMU,self.interface)
+			self._channel.update(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker,EMU,self.interface)
 			return False
 	def reset(self):
 		# restart the parameters of simulatión, put date_time marker equal to 0 and update de scenario
 		self._time_parameters.reset()
-		datetime = self._time_parameters.get_date_time()
-		self._channel.update(self._node_list,self._nNodes,datetime,False,self.interface)
+		self._channel.update(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker,False,self.interface)
 	def write_bash (self):
 		# write two bash files, one for define the scenario and  other to delete the configuration of the first file.
 		#Open the two bash files
@@ -132,6 +133,7 @@ class scenario:
 		w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
 		#Command to delete the bridge
 		w_shutdown.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
+		w_runtime.write('sudo brctl stp brSATEMU off\nsudo brctl setageing brSATEMU 0\nsudo brctl setfd brSATEMU 0\n')
 		interface = self.interface
 		for n in range(1,self._nNodes+1):
 			#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
@@ -212,8 +214,6 @@ class scenario:
 			EMULADOR.terminate()
 			EMULADOR.join()
 			subprocess.call('./shutdown_bash.sh')
-			for _ in range(n_connections):
-				sys.stdout.write("\x1b[1A\x1b[2K")
 		for _ in range(3):
 				sys.stdout.write("\x1b[1A\x1b[2K")
 		self.reset()
@@ -223,10 +223,15 @@ class scenario:
 		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 		String = self._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
 		String += '\n'
-		for n in range(self._nNodes):
-			for j in range(n+1,self._nNodes):
-				String +=  '-%s -> %s:	 %fms\n'%(self._node_list[n].get_basic_data(),self._node_list[j].get_basic_data(),self._channel.get_channel(n,j))
-		sys.stdout.write(String) # reprint the linesprint (String)
+		channels = self._channel.possible_channels()
+		for channel in channels:
+			channel = channel.split('/')
+			n = int(channel[0])
+			j = int(channel[1])
+			String +=  '-%s -> %s:	 %fms\n'%(self._node_list[n].get_basic_data(),self._node_list[j].get_basic_data(),self._channel.get_channel(n,j))
+		sys.stdout.write(String) # print the linesprint (String)
+		for _ in range(len(channels)+1):
+			sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
 		time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
 		Nversion = 0
 		while True:
@@ -238,12 +243,15 @@ class scenario:
 				break
 			String = self._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
 			String += '\n'
-			for n in range(self._nNodes):
-				for j in range(n+1,self._nNodes):
-					String +=  '-%s -> %s:	 %fms\n'%(self._node_list[n].get_basic_data(),self._node_list[j].get_basic_data(),self._channel.get_channel(n,j))
-			for _ in range(n_connections):
-				sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
+			channels = self._channel.possible_channels()
+			for channel in channels:
+				channel = channel.split('/')
+				n = int(channel[0])
+				j = int(channel[1])
+				String +=  '-%s -> %s:	 %fms\n'%(self._node_list[n].get_basic_data(),self._node_list[j].get_basic_data(),self._channel.get_channel(n,j))
 			sys.stdout.write(String) # print the linesprint (String)
+			for _ in range(len(channels)+1):
+				sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
 			if CESIUM:
 				clone_czml = czml.CZML()
 				ID = 'document'
@@ -362,7 +370,26 @@ class scenario:
 		packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
 		packet1.availability = interval
 		self.czml_doc.packets.append(packet1)
-		
+		n_packets = int(1+self._nNodes+(self._nNodes-1)*self._nNodes/2)
+		cont = 1
+		results = []
+		index = 0
+		for node in self._node_list:
+			results.append(None)
+			print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(cont,n_packets))
+			sys.stdout.write("\x1b[1A\x1b[2K")
+			self.czml_doc.packets.append(node.czml_node(self._time_parameters.get_datetimes(),results,index))
+			cont += 1
+		for n in range(0,self._nNodes):
+			for j in range(n+1,self._nNodes):
+				results.append(None)
+				print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(cont,n_packets))
+				sys.stdout.write("\x1b[1A\x1b[2K")
+				result = self._channel.czml_channels(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j],results,index)
+				if result is not None:
+					self.czml_doc.packets.append(result)
+				cont += 1
+		'''
 		processes = []
 		results = []
 		index = 0
@@ -392,6 +419,11 @@ class scenario:
 		for result in results:
 			if result is not None:
 				self.czml_doc.packets.append(result)
+				
+				
+		'''		
+				
+				
 		# Write the CZML document to a file
 		filename = "Class/templates/ScenarioCZML.czml"
 		self.czml_doc.write(filename)

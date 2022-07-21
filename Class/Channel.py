@@ -4,10 +4,41 @@ from Class.channel_threshold import threshold
 from skyfield.api import load
 import math
 from czml import czml
+import time
+import numpy as np
 #GLOBAL CONSTANTS
 a_Earth = 6378137 				# Earth major semi axis [m]
 c = 3e8					# Speed of light [m/s]
 ts = load.timescale()
+#Return a array in NED (Nord,East,Down) relative of GS from a vector in ECEF
+def ECEF2NED(pseudoDistance,LLA):
+	x = pseudoDistance[0]
+	y = pseudoDistance[1]
+	z = pseudoDistance[2]
+	lat = LLA[0] * math.pi/180
+	long = LLA[1] * math.pi/180
+	N = -math.sin(lat)*math.cos(long)*x - math.sin(lat)*math.sin(long)*y + math.cos(lat) * z
+	E = -math.sin(long)*x + math.cos(long)*y
+	D = -math.cos(lat)*math.cos(long)*x - math.cos(lat)*math.sin(long)*y - math.sin(lat)*z
+	NED = np.array([N,E,D])
+	return NED
+def NED2AzimuthElevationDistance(NED):
+	# Computation of the pointing angles and the distance to each of the satellites
+	
+	d=math.sqrt(NED[0]**2+NED[1]**2+NED[2]**2)	#Distance
+	alpha=math.atan(NED[1]/NED[0])*180/math.pi	#Azimuth
+	beta=math.asin(-NED[2]/d)*180/math.pi		#Elevation
+	return alpha,beta,d
+def GroundBase2Satellite(ECEF_SAT,ECEF_GB,LLA_GB,Min,threshold):
+	p = ECEF_SAT-ECEF_GB
+	NED = ECEF2NED(p,LLA_GB)
+	alpha,beta,d = NED2AzimuthElevationDistance(NED)
+	if (beta >= Min) and d < threshold:
+		delay = d/c*1e3
+	else:
+		delay = -1
+	return delay	
+
 
 class channel:
 	'''A channel object defines the delays between node'''
@@ -22,14 +53,14 @@ class channel:
 		channel_thresholds = channel['threshold']
 		for channel_threshold in channel_thresholds:
 			self.threshold_vector.append(threshold(channel_threshold))
-	def AddNode(self,node_list,nNodes,date_time):
+	def AddNode(self,node_list,nNodes,date_time_vector,marker):
 		#Add a new row and a new to the matrix with one new node
 		#Creates a empty row to define the new row of the matrix
 		new_row = []
 		for n in range(0,nNodes-1):
 			#Add a new position with the daley of the node n and the new node
 			#Calcule the delay betwwen a pair of nodes
-			delay = self._Define_Channel(node_list[n],node_list[nNodes-1],date_time)
+			delay = self._Define_Channel(node_list[n],node_list[nNodes-1],date_time_vector,marker)
 			if not(self._exist_channel) and delay != -1:
 				#Check if exist some channel
 				self._exist_channel = True
@@ -41,7 +72,7 @@ class channel:
 		new_row.append(0)
 		#Append the new row
 		self._dalay_matrix.append(new_row)
-	def update(self,node_list,nNodes,date_time,EMU,root_interface):
+	def update(self,node_list,nNodes,date_time_vector,marker,EMU,root_interface):
 		#update the value of the delays betwwen the nodes. If EMU is true the method change the delay of the emulator
 		#Save the current matrix
 		old_matrix = self._dalay_matrix
@@ -50,14 +81,13 @@ class channel:
 		delay = None
 		#Compare all the nodes between them
 		for n in range(0,nNodes):
-			marker = 0
 			for j in range(0,nNodes):
 				if j < n :
 					#If j is lower than n the delay of the nodes in the position n and j have benn calulate yet. It only copy the value of the position j:n
 					delay = self._dalay_matrix[j][n]
 				elif j > n:
 					#If j is bigger than n, it calcule the delay between the nodes in the new datetime
-					delay = self._Define_Channel(node_list[n],node_list[j],date_time)
+					delay = self._Define_Channel(node_list[n],node_list[j],date_time_vector,marker)
 					if delay != -1 and not(self._exist_channel):
 						#Check if exist some channel
 						self._exist_channel = True
@@ -73,6 +103,13 @@ class channel:
 						str_delay = '%fms' % (delay)
 						subprocess.run(['sudo','tc','qdisc','change','dev',interface,'parent',n_j,'handle',nj,'netem','delay',str_delay])
 				self._dalay_matrix[n][j] = delay
+	def possible_channels(self):
+		channels = []
+		for n in range(0,len(self._dalay_matrix)):
+			for j in range(n+1,len(self._dalay_matrix)):
+				if self._dalay_matrix[n][j] != -1:
+					channels.append('%d/%d'%(n,j))
+		return channels
 	def delete(self):
 		#Delete the delay matrix
 		self._dalay_matrix = []
@@ -95,7 +132,7 @@ class channel:
 				return cont
 			cont +=1
 	
-	def _Define_Channel(self,node, other,date_time):
+	def _Define_Channel(self,node, other,date_time_vector,marker):
 		#Compute the daly beteween nodes.it checks the type of the nodes and make the necessary cumputation. It returns a Bolean and a delay.
 		n = 0
 		found = False
@@ -113,20 +150,22 @@ class channel:
 		if type(node).__name__ == "Satellite" and type(other).__name__ == "Satellite":
 			threshold = self.threshold_vector[threshold_pos].get_Satellite2Satellite()
 			#Compute the delay between two satellites
-			delay = self._Satellite2Satellite(node.get_ECI(date_time),other.get_ECI(date_time),threshold)
-			 
+			delay = self._Satellite2Satellite(node.get_ECI(marker),other.get_ECI(marker),threshold)
+			
 		elif type(node).__name__ != "Satellite" and type(other).__name__ == "Satellite":
 			#Compute the delay between a Satellite and a Ground Station
 			threshold = self.threshold_vector[threshold_pos].get_Ground2Satellite()
-			delay = self._GroundBase2Satellite(other,node,0,threshold,date_time)
-			
+			delay = GroundBase2Satellite(other.get_ECEF(marker),node.get_ECEF(),node.get_LLA(),0,threshold)
 		elif type(node).__name__ == "Satellite" and type(other).__name__ != "Satellite":
 			threshold = self.threshold_vector[threshold_pos].get_Ground2Satellite()
 			#Compute the delay between a Satellite and a Ground Station
-			delay = self._GroundBase2Satellite(node,other,0,threshold,date_time)
+			delay = GroundBase2Satellite(node.get_ECEF(marker),other.get_ECEF(),other.get_LLA(),0,threshold)
+			
+			
 		else:
 			#The emulator not interconnec two Graund Stations between them
 			delay = -1
+			
 		return delay
 	def _GroundBase2Satellite(self, SAT ,GS ,MinAngle,threshold,date_time):
 		#Compute the delay between a Ground Station and a Satellite
@@ -144,6 +183,8 @@ class channel:
 		else:
 			delay = -1
 		return delay
+	
+	
 	def _Satellite2Satellite(self,ECI1,ECI2,threshold):
 		#Compute the delay between two Satellite nodes
 		#Find the angle of the cone
@@ -159,6 +200,7 @@ class channel:
 		dot_res = diff_vec_norm[0] * ECI1_norm [0] + diff_vec_norm[1] * ECI1_norm [1] + diff_vec_norm[2] * ECI1_norm [2]
 		diff_angle = math.acos(abs(dot_res))
 		#If the angle is greater than theta, then destination must be ouside the cone.
+		
 		if diff_angle > theta and threshold > diff_norm:
 			#Compute the delay in ms in the ideal situation where the propagation speed is the light speed
 			delay = diff_norm/c*1e3
@@ -173,6 +215,7 @@ class channel:
 				#Compute the delay in ms in the ideal situation where the propagation speed is the light speed
 				delay = diff_norm/c*1e3
 				return delay
+				
 	def _emu_czml_channel(self,node1,node2):
 
 		#Defines the name and the id of the new packet. (e.j, ID = Node1.name-to-Node2.name)
@@ -225,13 +268,15 @@ class channel:
 		polyline.show = []
 		#last_change save the last datetime when the state of LoS has changed
 		last_change = datetime_vector[0].isoformat()
+		marker = 0
 		#previous_LoS is a boolean that define if there is line of sigth in the previous datetime
-		previous_delay = self._Define_Channel(node1,node2,datetime_vector[0])
+		previous_delay = self._Define_Channel(node1,node2,datetime_vector,marker)
 		StrDescription = "<h2>Access times</h2><table class='sky-infoBox-access-table'><tr><th>Start</th><th>End</th>"
 		#The loop search the intervals when there is line of sigth and when there isn't
-		for datetime in datetime_vector[1:]:
+		for marker in range(1,len(datetime_vector)):
+			datetime = datetime_vector[marker]
 			#Calcul is there is a LoS
-			delay = self._Define_Channel(node1,node2,datetime)
+			delay = self._Define_Channel(node1,node2,datetime_vector,marker)
 			if delay != -1 and previous_delay == -1:
 				#When current LoS is different than the previus and True, close a false interval with the datetime in last_change and the value of datetime 
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":False}
@@ -260,6 +305,7 @@ class channel:
 				#When we check all the datetimes of the emulation, it closes the last interval.In that case with a False interval
 				show = {"interval":last_change+'/%s'%datetime.isoformat(),"boolean":False}
 				polyline.show.append(show)
+			
 			#Update previous_LoS
 			previous_delay = delay
 		if Any_channel:

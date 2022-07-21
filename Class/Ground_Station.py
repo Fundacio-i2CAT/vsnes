@@ -70,6 +70,5 @@ class GroundStation(Node):
 		GS.label = label
 		
 		GS.description = description
-		
 		results[index] = GS
 		return GS

@@ -11,7 +11,7 @@ def main():
 	while True:
 		inp = input("Insert the action you wish to perform (insert 'help' to see all available actions): ").strip().lower()
 		if inp == "help":
-			print ("- help: shows all available actions\n- scenario: show the load nodes and his type\n- start_VMs: create or start the VMs for every node.\n- delete_VM: delete a specific VM\- write_czml: write in ScenarioCZMÑ.czml the requiret date to run Cesium for this scenario\n- run_all: run the emulation and Cesium\n- run_emulator: run only the emulation\n- run_CESIUM: run only the visulization at Cesium\n- exit: program execution ends")
+			print ("- help: shows all available actions\n- scenario: show the load nodes and his type\n- start_VMs: create or start the VMs for every node.\n- delete_VM: delete a specific VM\- write_czml: write in ScenarioCZML.czml the requiret data to run Cesium for this scenario\n- ssh_connection: opens a new terminal with a SSH connection with some of the node's VM.\n- run_all: run the emulation and Cesium\n- run_emulator: run only the emulation\n- run_CESIUM: run only the visulization at Cesium\n- exit: program execution ends")
 		elif inp == "scenario":
 			print (Scenario.scenario_description())
 		elif inp == 'write_czml' or inp == 'write czml':
@@ -32,7 +32,7 @@ def main():
 					else:
 						print('ERROR: Invalid answer')
 			Scenario.start_scenario(True,True)
-		elif inp == 'emu' or inp == 'run_emu' or inp == 'run emu':
+		elif inp == 'emu' or inp == 'emulator' or inp == 'run_emu' or inp == 'run emu' or inp == 'run_emulator' or inp == 'run emulaotr':
 			Scenario.start_scenario(True,False)
 		elif inp == 'cesium' or inp == 'run_cesium' or inp == 'run cesium':
 			if not(CZML_BOOL):
