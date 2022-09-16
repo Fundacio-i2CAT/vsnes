@@ -1,6 +1,6 @@
 from Class.Scenario import scenario
 import toml
-
+#TEST
 def main():
 	CZML_BOOL = False
 	print ("Hi, you have started the satellite network emulator.")
