@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-
 from Class.Satellite import Satellite
 from Class.Ground_Station import GroundStation
 from Class.Time_parameters import time_parameters
 from Class.Channel import channel
 
 from skyfield.api import load
-from ipaddress import IPv4Network
+from ipaddress import IPv4Network,AddressValueError
 from czml import czml
-
+import toml
 import time
 import subprocess
 import webbrowser
@@ -35,33 +34,54 @@ class scenario:
 		
 	def __init__(self,TOMLfile):
 		self.start_Network()
-		self._time_parameters = time_parameters(TOMLfile['Time'])
+		try:
+			self._time_parameters = time_parameters(TOMLfile['Time'])
+		except KeyError:
+			TOMLfile['Time'] = {}
+			self._time_parameters = time_parameters(TOMLfile['Time'])
 		self._node_list = []
-		self._channel = channel(TOMLfile['Channel'])
+		self._channel = channel(TOMLfile['Channels'])
 		self._nNodes = 0
 		global ip_Address
 		global Network
-		Network = TOMLfile['Network']['network']
-		Network = IPv4Network(Network)
 		while True:
+			Network = TOMLfile['network']
 			try:
-				for addr in Network:
-					ip_Address.append(addr)
+				Network = IPv4Network(Network)
 				break
+			except AddressValueError:
+				print('ERROR: Invalid format')
+				network = input('What is the correct IP address of the network?[10.0.0.0/24]')
+				if network == '':
+					network = '10.0.0.0/24'
+				Network = TOMLfile['network'] = network
 			except ValueError:
-				Network = input('%s is not a possible network. Insert a correct one:'%(Network)) 
+				network = input('ERROR: %s has host bits set. What is the correct IP address of the network?[10.0.0.0/24]'%(TOMLfile['network']))
+		print(Network)
+		for addr in Network:
+			ip_Address.append(addr)
 		ip_Address = ip_Address[1:-1]
-		self.interface = TOMLfile['Network']['interface']
-		SpaceSegment = TOMLfile['SpaceSegment']
-		for SatelliteSistem in SpaceSegment['SatelliteSistem']:
-			config_file = SatelliteSistem['TLE']
-			satellites = load.tle_file(config_file)
-			for sat in satellites:
-				self.AddSatellite(sat,SatelliteSistem)
-		GroundSegment = TOMLfile['GroundSegment']
+		try:
+			SpaceSegment = TOMLfile['SpaceSegment']
+		except KeyError:
+			TOMLfile['SpaceSegment'] = {}
+		try:
+			for SatelliteSistem in SpaceSegment['SatelliteSistem']:
+				try:
+					config_file = SatelliteSistem['TLE']
+				except KeyError:
+					pass
+				satellites = load.tle_file(config_file)
+				for sat in satellites:
+					self.AddSatellite(sat,SatelliteSistem)
+		except UnboundLocalError:
+			pass
+		try:
+			GroundSegment = TOMLfile['GroundSegment']
+		except KeyError:
+			pass
 		for GroundSistem in GroundSegment['GroundSistem']:
 			self.AddGroundStation(GroundSistem)
-		self.write_bash()
 		# Read an existing CZML file
 		filename = 'Class/templates/ScenarioCZML.czml'
 		with open(filename, 'r') as example:
@@ -70,11 +90,12 @@ class scenario:
 			else:
 				self.czml_doc = czml.CZML()
 				self.czml_doc.loads(example.read())
-	def AddSatellite(self,sat_toml,constallation):
+		#print(toml.dumps(TOMLfile))
+	def AddSatellite(self,sat_tle,constallation):
 		#Creates a Satellite object and add to the scenario
 		try:
 			#Creade a Satellite Node
-			SAT = Satellite(sat_toml,constallation,ip_Address[self._nNodes],Network.netmask,self._nNodes,self._time_parameters.get_datetimes())
+			SAT = Satellite(sat_tle,constallation,ip_Address[self._nNodes],Network.netmask,self._nNodes,self._time_parameters.get_datetimes())
 			#Check if the node exist yet
 			if self.Exist_Node(SAT):
 				print ("- Satellite %s: NOT ACCEPTED"%(SAT.name))
@@ -85,7 +106,7 @@ class scenario:
 				#Add 1 to the  node counter
 				self._nNodes += 1
 				#Add a new node to the channel
-				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker)
+				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters._marker)
 		except IndexError:
 			print ('Maximum number of nodes exceeded: Node NOT ACCEPTED')
 			return
@@ -97,7 +118,7 @@ class scenario:
 			#Creade a GroundStation Node
 			GS = GroundStation(TOML_GS, ip_Address[self._nNodes], Network.netmask,self._nNodes)
 			#Check if the node exist yet
-			if self.Exist_Node(GS):
+			if self.Exist_Node(GS) or GS.name == None:
 				print ("- Ground Station %s: NOT ACCEPTED"%(GS.name))
 				return None
 			else:
@@ -106,7 +127,7 @@ class scenario:
 				#Add 1 to the node counter	
 				self._nNodes += 1
 				#Add a new node to the channel
-				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker)
+				self._channel.AddNode(self._node_list,self._nNodes,self._time_parameters._marker)
 		except IndexError:
 			print ('Maximum number of nodes exceeded: Node NOT ACCEPTED')
 			return	
@@ -116,12 +137,12 @@ class scenario:
 			self.reset()
 			return True
 		else:
-			self._channel.update(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker,EMU,self.interface)
+			self._channel.update(self._node_list,self._nNodes,self._time_parameters._marker,EMU)
 			return False
 	def reset(self):
 		# restart the parameters of simulatión, put date_time marker equal to 0 and update de scenario
 		self._time_parameters.reset()
-		self._channel.update(self._node_list,self._nNodes,self._time_parameters.get_datetimes(),self._time_parameters._marker,False,self.interface)
+		self._channel.update(self._node_list,self._nNodes,self._time_parameters._marker,False)
 	def write_bash (self):
 		# write two bash files, one for define the scenario and  other to delete the configuration of the first file.
 		#Open the two bash files
@@ -129,55 +150,93 @@ class scenario:
 		w_shutdown = open("shutdown_bash.sh", "w")
 		w_runtime.write('#!/bin/sh\n')
 		w_shutdown.write('#!/bin/sh\n')
-		#Command to create a bridge with name brSATEMU
 		w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
 		#Command to delete the bridge
 		w_shutdown.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
 		w_runtime.write('sudo brctl stp brSATEMU off\nsudo brctl setageing brSATEMU 0\nsudo brctl setfd brSATEMU 0\n')
-		interface = self.interface
+		
 		for n in range(1,self._nNodes+1):
-			#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
-			
-			# Define an interface in a VLAN
-			line_runtime = str('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-			w_runtime.write(line_runtime)
-			#Set up
-			line_runtime = str('sudo ip link set dev %s.%d up\n'%(interface,n))
-			w_runtime.write(line_runtime)
-			#Add the interface to the bridge
-			line_runtime = str('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
-			w_runtime.write(line_runtime)
-			#Defines a tc qdisc root
-			line_runtime = str('sudo tc qdisc add dev %s.%d root handle %d: htb\n'%(interface,n,n))
-			w_runtime.write(line_runtime)
-			#Delete the root of tc qdisc
-			line_shutdown = str('sudo tc qdisc del dev %s.%d root handle %d: htb\n'%(interface,n,n))
-			w_shutdown.write(line_shutdown)
-			# Delete the interface associated with the VLAN 
-			line_shutdown = str('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-			w_shutdown.write(line_shutdown)
+			if self._node_list[n-1].check_VM():
+				#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
+				interface = self._node_list[n-1]._get_Host_interface()
+				# Define an interface in a VLAN
+				line_runtime = str('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+				w_runtime.write(line_runtime)
+				#Set up
+				line_runtime = str('sudo ip link set dev %s.%d up\n'%(interface,n))
+				w_runtime.write(line_runtime)
+				#Add the interface to the bridge
+				line_runtime = str('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
+				w_runtime.write(line_runtime)
+				#Defines a tc qdisc root
+				line_runtime = str('sudo tc qdisc add dev %s.%d root handle 1: htb\n'%(interface,n))
+				w_runtime.write(line_runtime)
+				line_runtime = str('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
+				w_runtime.write(line_runtime)
+				#Delete the root of tc qdisc
+				line_shutdown = str('sudo tc qdisc del dev %s.%d root handle 1: htb\n'%(interface,n))
+				w_shutdown.write(line_shutdown)
+				# Delete the interface associated with the VLAN 
+				line_shutdown = str('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+				w_shutdown.write(line_shutdown)
+				line_shutdown = str('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
+				w_shutdown.write(line_shutdown)
+				if self._node_list[n-1].service == 'relay' or self._node_list[n-1].service == 'Relay' or self._node_list[n-1].service == 'RELAY':
+					nodeNumber2 = self._nNodes + n
+					line_runtime = 'sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2)
+					w_runtime.write(line_runtime)
+					line_shutdown = 'sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2)
+					w_shutdown.write(line_shutdown)
+					line_runtime = 'sudo ip link set dev %s.%d up\n' % (interface,nodeNumber2)
+					w_runtime.write(line_runtime)
+					line_runtime = 'sudo brctl addif brSATEMU %s.%d\n' % (interface,nodeNumber2)
+					w_runtime.write(line_runtime)
+					line_runtime = str('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
+					w_runtime.write(line_runtime)
+					line_shutdown = str('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
+					w_shutdown.write(line_shutdown)
+					# Add the conditions of the channel
+					line_runtime = str('sudo tc qdisc add dev %s.%d root netem loss 100'%(interface,nodeNumber2))
+					line_runtime += '%\n'
+					w_runtime.write(line_runtime)
 		#Creates one classid per node in every Vlan interface and define channel properties
 		for n in range(1,self._nNodes+1):
-			for j in range(1,self._nNodes+1):
-				#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
-				line_runtime = str('sudo tc class add dev %s.%d parent %d: classid %d:%d htb rate 100mbit\n'%(interface,n,n,n,j))
-				w_runtime.write(line_runtime)
-				# Add the conditions of the channel
-				#Obtain the delay between the nodes n-1 and j-1
-				delay = self._channel.get_channel(n-1,j-1)
-				if delay == -1:
-					line_runtime = str('sudo tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem loss 100'%(interface,n,n,j,n,j))
-					line_runtime = line_runtime + '%\n'
-				else:
-					line_runtime = str('sudo tc qdisc add dev %s.%d parent %d:%d handle %d%d: netem delay %fms\n'%(interface,n,n,j,n,j,delay))
-				w_runtime.write(line_runtime)
-				ip = ip_Address[j-1]
-				# Define filters according to the source ip 
-				line_runtime = str('sudo tc filter add dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
-				w_runtime.write(line_runtime)
-				# Delete the filters
-				line_shutdown = str('sudo rtc filter del dev %s.%d protocol ip parent %d:0 prio 1 u32 match ip src %s/32 flowid %d:%d\n'%(interface,n,n,ip,n,j))
-				#w_shutdown.write(line_shutdown)
+			if self._node_list[n-1].check_VM():
+				interface = self._node_list[n-1]._get_Host_interface()
+				for j in range(1,self._nNodes+1):
+					#Obtain the delay between the nodes n-1 and j-1
+					delay = self._channel.get_channel(n-1,j-1)
+					if delay == -2:
+						#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
+						line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
+						w_runtime.write(line_runtime)
+						# Add the conditions of the channel
+						line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100'%(interface,n,j,j))
+						line_runtime += '%\n'
+					else:
+						Channel = self._channel._Get_Channel_Definition(self._node_list[n-1],self._node_list[j-1])
+						#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
+						try:
+							line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate %fmbit\n'%(interface,n,j,Channel['Data_rate']))
+						except KeyError or TypeError:
+							line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
+						w_runtime.write(line_runtime)
+						# Add the conditions of the channel
+						if delay == -1:
+							line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100'%(interface,n,j,j))
+							line_runtime = line_runtime + '%\n'
+						else:
+							Losses = str(Channel['Packet_loss'])+'%'
+							Correlated_losses = str(Channel['Correlated_losses'])+'%'
+							line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem delay %fms loss %s %s\n'%(interface,n,j,j,delay,Losses,Correlated_losses))
+					w_runtime.write(line_runtime)
+					ip = ip_Address[j-1]
+					# Define filters according to the source ip 
+					line_runtime = str('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n'%(interface,n,j,j))
+					w_runtime.write(line_runtime)
+					# Delete the filters
+					line_shutdown = str('sudo tc filter del dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n'%(interface,n,j,j))
+					#w_shutdown.write(line_shutdown)
 		# Close opened files
 		w_runtime.close()
 		w_shutdown.close()
@@ -193,9 +252,9 @@ class scenario:
 		if int(exist_net) == 0:
 			subprocess.run(['virsh', 'net-start', 'default'])
 	def start_scenario(self,EMU,CESIUM):
-		
 		if EMU:
 			self.check_VMs()
+			self.write_bash()
 			subprocess.call('./runtime_bash.sh')
 			n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 			EMULADOR = Process(target=self._run,args=(EMU, CESIUM,n_connections))
@@ -205,7 +264,9 @@ class scenario:
 				EMU_bool = 'true'
 			else:
 				EMU_bool = 'false'
-			timer_ms = self._time_parameters.get_TimeInterval()/self._time_parameters._non_contact_speed * 10**3
+			timer_ms = self._time_parameters.get_TimeInterval()/(self._time_parameters._non_contact_speed*4) * 10**3
+			if timer_ms > 1000:
+				timer_ms = 500
 			shell = 'gnome-terminal -t %s -- python3 Class/Server.py %s %f'%('Cesium Server',EMU_bool,timer_ms)
 			subprocess.run(shell, shell = True)
 			webbrowser.open_new('http://localhost:5000/')
@@ -218,8 +279,18 @@ class scenario:
 				sys.stdout.write("\x1b[1A\x1b[2K")
 		self.reset()
 	def _run(self,EMU,CESIUM,n_connections):
-		
-		time.sleep(1)
+		start = time.time()
+		self._Emulation_startup_script()
+		end = time.time()
+
+		#Subtract Start Time from The End Time
+		total_time = end - start
+		if CESIUM:
+			if total_time < 5:
+				time.sleep(5-total_time)
+		else:
+			if total_time < 1:
+				time.sleep(1-total_time)
 		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 		String = self._time_parameters.get_date_time().strftime("%m/%d/%Y, %H:%M:%S")
 		String += '\n'
@@ -230,10 +301,30 @@ class scenario:
 			j = int(channel[1])
 			String +=  '-%s -> %s:	 %fms\n'%(self._node_list[n].get_basic_data(),self._node_list[j].get_basic_data(),self._channel.get_channel(n,j))
 		sys.stdout.write(String) # print the linesprint (String)
+		
+		
 		for _ in range(len(channels)+1):
 			sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
 		time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
 		Nversion = 0
+		if CESIUM:
+			clone_czml = czml.CZML()
+			ID = 'document'
+			name = 'Satellite Network Emulator'
+			Nversion += 1
+			version= self.czml_doc.packets[0].version[0]+'.'+str(Nversion)
+			interval = self._time_parameters.get_interval()
+			multiplier = self.get_speed()*0.75
+			currentTime = self._time_parameters.get_date_time().isoformat()
+			clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'UNBOUNDED',step = 'SYSTEM_CLOCK_MULTIPLIER')
+			packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
+			packet1.availability = interval
+			clone_czml.packets.append(packet1)
+			for packet in self.czml_doc.packets[1:]:
+				clone_czml.packets.append(packet)
+			filename = "Class/templates/ScenarioCZML.czml"
+			clone_czml.write(filename)
+			self.czml_doc = clone_czml
 		while True:
 			# Initialize a document
 			start = time.time()
@@ -252,6 +343,17 @@ class scenario:
 			sys.stdout.write(String) # print the linesprint (String)
 			for _ in range(len(channels)+1):
 				sys.stdout.write("\x1b[1A\x1b[2K") # move up cursor and delete whole line
+			# Grab Currrent Time After Running the Code
+			end = time.time()
+
+			#Subtract Start Time from The End Time
+			total_time = end - start
+			multiplier = self.get_speed()*0.75
+			stopTime=(self._time_parameters.get_TimeInterval()/multiplier)-total_time
+			if stopTime < 0:
+				multiplier = self._time_parameters.get_TimeInterval()/total_time*0.75
+				stopTime = 0
+				
 			if CESIUM:
 				clone_czml = czml.CZML()
 				ID = 'document'
@@ -260,7 +362,6 @@ class scenario:
 				version= self.czml_doc.packets[0].version[0]+'.'+str(Nversion)
 				interval = self._time_parameters.get_interval()
 				currentTime = self._time_parameters.get_date_time().isoformat()
-				multiplier = self.get_speed()
 				clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'UNBOUNDED',step = 'SYSTEM_CLOCK_MULTIPLIER')
 				packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
 				packet1.availability = interval
@@ -270,14 +371,6 @@ class scenario:
 				filename = "Class/templates/ScenarioCZML.czml"
 				clone_czml.write(filename)
 				self.czml_doc = clone_czml
-			# Grab Currrent Time After Running the Code
-			end = time.time()
-
-			#Subtract Start Time from The End Time
-			total_time = end - start
-			stopTime=(self._time_parameters.get_TimeInterval()/self.get_speed())-total_time
-			if stopTime < 0:
-				stopTime = 0
 			time.sleep(stopTime)
 	def check_VMs(self):
 		for Node in self._node_list:
@@ -293,11 +386,25 @@ class scenario:
 						print('ERROR: Invalid answer')
 				break
 	def delete_VMs (self):
-		for n in range(0,self._nNodes):
-			self._node_list[n].delete_VM()
+		delete = False
+		for Node in self._node_list:
+			if Node.check_VM():
+				while True:
+					ans = input("Do you want to delete all the VMs relete with the scenario?(Y/N):").strip().lower()
+					if ans == 'y' or ans == 'yes':
+						delete = True
+						break
+					elif ans == 'n' or ans == 'no':
+						break
+					else:
+						print('ERROR: Invalid answer')
+				break
+		if delete:
+			for n in range(0,self._nNodes):
+				self._node_list[n].delete_VM()
 	def start_VMs(self):
 		for node in self._node_list:
-			node.run_VM()
+			node.run_VM(self._nNodes)
 	def Exist_Node(self,New_node):
 		exist = False
 		n = 0
@@ -315,46 +422,10 @@ class scenario:
 		for n in range(0,self._nNodes):
 			description += 'Node %d: %s\n'%(n+1,self._node_list[n].description().replace('<h3>','').replace('<p>','').replace('</h3>','\n').replace('</p>','').replace('</small>','').replace('<small>',''))
 		return description
-	def update_czml(self):
-		start = time.time()
-		self.czml_doc = czml.CZML()
-		# Create and append the document packet
-		ID = 'document'
-		name = 'Satellite Network Emulator'
-		version= '1.0'
-		interval = self._time_parameters.get_interval()
-		currentTime = self._time_parameters.get_date_time().isoformat()
-		multiplier = self._time_parameters.get_speed()
-		clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'LOOP_STOP',step = 'SYSTEM_CLOCK_MULTIPLIER')
-		packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
-		packet1.availability = interval
-		self.czml_doc.packets.append(packet1)
-		
-		processes = []
-		czml_nodes = []
-		results = []
-		results.append(None)
-		index = 0
-		initial_threads = threading.active_count()
-		datetime_vector = []
-		date_time = self._time_parameters.get_date_time()
-		datetime_vector.append(date_time)
-		for node in self._node_list:
-			czml_nodes.append(node.czml_node(datetime_vector,results,index))
-		czml_channels = self._channel.update(self._node_list,self._nNodes,date_time,True,self.interface,True)
-		for packet in czml_nodes:
-			self.czml_doc.packets.append(packet)
-		for packet in czml_channels:
-			self.czml_doc.packets.append(packet)
-		# Write the CZML document to a file
-		filename = "Class/templates/ScenarioCZML.czml"
-		self.czml_doc.write(filename)
-		# Grab Currrent Time After Running the Code
-		end = time.time()
-
-		#Subtract Start Time from The End Time
-		total_time = end - start
-		#print("\n"+ str(total_time))
+	def _Emulation_startup_script(self):
+		for Node in self._node_list:
+			Node.arp_table(self._node_list)
+			Node.Emulation_startup_script(self._node_list)
 	def write_czml (self):
 		# Initialize a document
 		start = time.time()
@@ -372,58 +443,19 @@ class scenario:
 		self.czml_doc.packets.append(packet1)
 		n_packets = int(1+self._nNodes+(self._nNodes-1)*self._nNodes/2)
 		cont = 1
-		results = []
-		index = 0
 		for node in self._node_list:
-			results.append(None)
 			print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(cont,n_packets))
 			sys.stdout.write("\x1b[1A\x1b[2K")
-			self.czml_doc.packets.append(node.czml_node(self._time_parameters.get_datetimes(),results,index))
+			self.czml_doc.packets.append(node.czml_node(self._time_parameters.get_datetimes()))
 			cont += 1
 		for n in range(0,self._nNodes):
 			for j in range(n+1,self._nNodes):
-				results.append(None)
 				print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(cont,n_packets))
 				sys.stdout.write("\x1b[1A\x1b[2K")
-				result = self._channel.czml_channels(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j],results,index)
+				result = self._channel.czml_channels(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j])
 				if result is not None:
 					self.czml_doc.packets.append(result)
 				cont += 1
-		'''
-		processes = []
-		results = []
-		index = 0
-		initial_threads = threading.active_count()
-		for node in self._node_list:
-			results.append(None)
-			x = threading.Thread(target=node.czml_node,args=(self._time_parameters.get_datetimes(),results,index,))
-			x.start()
-			processes.append(x)
-			index +=1
-		czml_channels = []
-		for n in range(0,self._nNodes):
-			for j in range(n+1,self._nNodes):
-				results.append(None)
-				x = threading.Thread(target=self._channel.czml_channels,args=(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j],results,index,))
-				x.start()
-				processes.append(x)
-				index +=1
-		len_Processes = len(processes)
-		print ('Writting the Cesium configuration file. Packages computed 0/%d.'%(len_Processes))
-		sys.stdout.write("\x1b[1A\x1b[2K")
-		for process in processes:
-			process.join()
-			N_working_processes = len_Processes-(threading.active_count()-initial_threads)
-			print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(N_working_processes,len_Processes))
-			sys.stdout.write("\x1b[1A\x1b[2K")
-		for result in results:
-			if result is not None:
-				self.czml_doc.packets.append(result)
-				
-				
-		'''		
-				
-				
 		# Write the CZML document to a file
 		filename = "Class/templates/ScenarioCZML.czml"
 		self.czml_doc.write(filename)

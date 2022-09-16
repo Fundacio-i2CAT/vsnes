@@ -1,34 +1,50 @@
+network = '10.0.0.0/24'
 [Time]
 	# min
 	TimeInterval = 0.5
-	MinSpeed = 5
-	MaxSpeed = 60
+	Contact_speed = 5
+	Non_contact_speed = 60
 	start_datetime = '2022-04-13 07:31:31'
 	end_datetime = '2022-04-13 07:32:30'
-[Network]
-	interface =  'virbr0'
-	network = '10.0.0.0/24'
 [SpaceSegment]
 	[[SpaceSegment.SatelliteSistem]]
 		TLE = 'test.tle'
-		channels = ['STARLINK']
+		propagator = 'SGP4'
+		group = 'IntelSat'
 		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'default'
+			name_VM = 'ubuntu20.04' 
+			OS = 'ubuntu' 	#ubuntu o alpine
 			username = 'ubuntu'
-			password = 'ubuntu' 
+			password = 'ubuntu'
+			interface = 'enp1s0'
 [GroundSegment]
 	[[GroundSegment.GroundSistem]]
 		name = 'i2cat'
+		group = 'i2cat'
 		latitude = 41.38732849041236
 		longitude = 2.1118426322937003
 		height = 150
-		channels = ['STARLINK']
 		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'default'
+			name_VM = 'ubuntu20.04' 
+			OS = 'ubuntu' 	#ubuntu o alpine
 			username = 'ubuntu'
 			password = 'ubuntu'
-[Channel]
-	[[Channel.threshold]]
-		id = 'STARLINK'
-		inter-satellite_threshold = 5e6
-		Ground2Satellite_threshold = 10e6
+			interface = 'enp1s0'
+
+[Channels]
+	[[Channels.Channel]]
+		Node1 = 'IntelSat' #Group name
+		Node2 = 'i2cat'
+		Min_elevation_angle = 0 	#[deg]
+		Threshold = 10e6		#[m]
+		Data_rate =  100		#[Mbit]
+		Packet_loss = 0		#[%]
+		Correlated_losses = 0		#[%] Emulate packet burst losses
+	[[Channels.Channel]]
+		Node1 = 'IntelSat' #Group name
+		Node2 = 'IntelSat'
+		Min_elevation_angle = 0 	#[deg]
+		Threshold = 5e6		#[m]
+		Data_rate =  100		#[Mbit]
+		Packet_loss = 0		#[%]
+		Correlated_losses = 0		#[%] Emulate packet burst losses	

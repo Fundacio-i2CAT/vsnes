@@ -22,11 +22,42 @@ class time_parameters:
 	
 	def __init__(self,TOMLTime):
 		#Save in variable the information of TOML file related with time 
-		TimeInterval = TOMLTime['TimeInterval']
-		contact_speed = TOMLTime['Contact_speed']
-		non_contact_speed = TOMLTime['Non_contact_speed']
-		start_date_time = TOMLTime['start_datetime']
-		end_date_time = TOMLTime['end_datetime']
+		while True:	
+			try:
+				TimeInterval = float(TOMLTime['TimeInterval'])
+				break
+			except KeyError:
+				TOMLTime['TimeInterval'] = input('Insert the time interval in minutes:')
+			except ValueError:
+				TOMLTime['TimeInterval'] = input('Insert again the time interval in minutes:')
+		while True:
+			try:
+				contact_speed = float(TOMLTime['Contact_speed'])
+				break
+			except KeyError:
+				TOMLTime['Contact_speed'] = input('Insert the contact speed:')
+			except ValueError:
+				TOMLTime['Contact_speed'] = input('Insert again the contact speed:')
+		while True:
+			try:
+				non_contact_speed = float(TOMLTime['Non_contact_speed'])
+				break
+			except KeyError:
+				TOMLTime['Non_contact_speed'] = input('Insert the non-contact speed:')
+			except ValueError:
+				TOMLTime['Non_contact_speed'] = input('Insert again the non-contact speed:')
+		while True:
+			try:
+				start_date_time = TOMLTime['start_datetime']
+				break
+			except KeyError:
+				TOMLTime['start_datetime'] = input('Insert the start_datetime (e.i YYYY-MM-DD hh:mm:ss)')
+		while True:
+			try:
+				end_date_time = TOMLTime['end_datetime']
+				break
+			except KeyError:
+				TOMLTime['end_datetime'] = input('Insert again the end_datetime (e.i YYYY-MM-DD hh:mm:ss)')
 		#Check if the value is correct. TimeInterval have to be greater than 0
 		if float(TimeInterval) > 0: 
 			self._TimeInterval = timedelta(minutes=float(TimeInterval))
@@ -48,12 +79,29 @@ class time_parameters:
 			#When the value is not possible defines a default value
 			print ('ERROR: invalid parameter, speed cannot be negative or equal to 0')
 			self._non_contact_speed = 1
-		
-		date_time = start_date_time+'+00:00'
-		date_time = datetime.fromisoformat(date_time)
+		while True:
+			if 11 > (len(start_date_time)):
+				start_date_time += ' 00:00:00'
+			date_time = start_date_time+'+00:00'
+			try:
+				date_time = datetime.fromisoformat(date_time)
+				TOMLTime['start_datetime'] = date_time
+				break
+			except ValueError:
+				print('ERROR: Invalit format.')
+				start_date_time = input('Insert again the start_datetime (e.i YYYY-MM-DD hh:mm:ss)')
 		initial_date_time = date_time
-		str_end_date_time = end_date_time+'+00:00'
-		end_date_time = datetime.fromisoformat(str_end_date_time)
+		while True:
+			if 11 > (len(end_date_time)):
+				end_date_time += ' 00:00:00'
+			str_end_date_time = end_date_time+'+00:00'
+			try:
+				end_date_time = datetime.fromisoformat(str_end_date_time)
+				TOMLTime['start_datetime'] = end_date_time
+				break
+			except ValueError:
+				print('ERROR: Invalit format.')
+				end_date_time = input('Insert again the end_datetime (e.i YYYY-MM-DD hh:mm:ss)')
 		if end_date_time <= initial_date_time:
 			date_time =end_date_time
 			end_date_time = initial_date_time
@@ -62,7 +110,6 @@ class time_parameters:
 			self._datetime_vector.append(date_time)
 			date_time += self._TimeInterval
 		self._marker = 0
-		self.RealTime = False
 	def get_speed (self,channel = True):
 		#Return a speed. If channel is True, it returns contact speed if not returns non contact speed
 		if channel:
@@ -92,12 +139,8 @@ class time_parameters:
 		self._marker = 0
 	def step(self):
 		# Add one to the marker, If these is greater than the lenght of datetime_vector return True because the emulation is over
-		if not(self.RealTime):
-			self._marker +=1
-			if self._marker >= len(self._datetime_vector):
-				return True
-			else:
-				return False
+		self._marker +=1
+		if self._marker >= len(self._datetime_vector):
+			return True
 		else:
-			date_time = datetime.now(timezone(timedelta(hours=0)))
 			return False

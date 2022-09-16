@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
-from Class.Orbit import Orbit
+from Class.SGP4 import SGP4
+from Class.TwoBody import TwoBody
 from Class.Node import Node
 from czml import czml
-
+import csv
 import math
 from sgp4 import exporter
 from datetime import datetime,timedelta
@@ -22,10 +22,26 @@ class Satellite(Node):
 	def __init__(self,sat,constallation,network,mask,nNodes,datetime_vector):
 		# Creates a satellite class object from three configuration lines
 		self._id = sat.model.satnum
-		self._orbit = Orbit(sat)
-		Node.__init__(self,name = sat.name,channels = constallation['channels'], cloneVM = constallation['clone_VM'],network = network,mask = mask,nNodes = nNodes)
+		while True:	
+			try:
+				if constallation['propagator'].lower() == 'twobody':
+					self._orbit = TwoBody(sat)
+				else:
+					self._orbit = SGP4(sat)
+				break
+			except KeyError:
+				constallation['propagator'] = input('Insert the propagator type:')
+		Node.__init__(self,name = sat.name, Node = constallation,network = network,mask = mask,nNodes = nNodes)
 		self._ECI,self._ECEF = self._orbit._vectors(datetime_vector)
-	
+		'''
+		with open('TEST_PROPAGATOR.csv', 'w', encoding='UTF8', newline='') as f:
+			writer = csv.writer(f)
+			csvHeader = ['SGP4_x-ECI','SGP4_y-ECI','SGP4_z-ECI','TwoBody_x-ECI','TwoBody_y-ECI','TwoBody_z-ECI','SGP4_x-ECEF','SGP4_y-ECEF','SGP4_z-ECEF','TwoBody_x-ECEF','TwoBody_y-ECEF','TwoBody_z-ECEF']
+			writer.writerow(csvHeader)
+			for n in range(len(self._ECI)):
+				csvV = [self._ECI[n][0],self._ECI[n][1],self._ECI[n][2],Two_ECI[n][0],Two_ECI[n][1],Two_ECI[n][2],self._ECEF[n][0],self._ECEF[n][1],self._ECEF[n][2],Two_ECEF[n][0],Two_ECEF[n][1],Two_ECEF[n][2]]
+				writer.writerow(csvV)'''
+		
 	def get_TLE (self):
 		#Return the skyfield object TLE
 		return self._orbit._TLE
@@ -52,9 +68,21 @@ class Satellite(Node):
 		position.referenceFrame = 'INERTIAL'
 		#cartesian is a list with the next format [time,x,y,z,time,x,y,z....,z]
 		cartesian = []
+		for i in range(0,len(datetime_vector)):
+			#Loop through a vector of datetimes
+			#Append datetime
+			cartesian.append(datetime_vector[i])
+			#Calcule the ECI position in the datetime
+			ECI = self._ECI[i]
+			#Append x-axis
+			cartesian.append(ECI[0])
+			#Append y-axis
+			cartesian.append(ECI[1])
+			#Append z-axis
+			cartesian.append(ECI[2])
 		Period = 2*math.pi/self._orbit._TLE.model.no_kozai
 		post_datetime = datetime_vector[-1]+timedelta(minutes=Period+15)
-		date_time = datetime_vector[0]
+		date_time = datetime_vector[-1]
 		while date_time < post_datetime:
 			#Loop through a vector of datetimes
 			#Append datetime
@@ -71,7 +99,7 @@ class Satellite(Node):
 		#Defines cartesian from the position
 		position.cartesian = cartesian
 		return position	
-	def czml_node(self,datetime_vector,results,index):
+	def czml_node(self,datetime_vector):
 		#Return object of type CZMLPacket
 		#Create a object of clas CZMLPacket
 		SAT = czml.CZMLPacket(id=self.name,name=self.name)
@@ -145,5 +173,4 @@ class Satellite(Node):
 		SAT.position = position
 		
 		SAT.description = description
-		results[index] = SAT
 		return SAT

@@ -1,12 +1,24 @@
 from Class.Scenario import scenario
 import toml
-#TEST
+
 def main():
 	CZML_BOOL = False
 	print ("Hi, you have started the satellite network emulator.")
-	#Open file
-	fo = open('config.toml', "r")
-	TOML = toml.load(fo, _dict=dict)
+	config = input("Insert the name of the configuration file [config.toml]:").strip()
+	if config == '':
+		config = 'config.toml'
+	try:
+		#Open file
+		fo = open(config, "r")
+	except FileNotFoundError:
+		print(config)
+		print ('The configuration file does not exist. Create the file or check the name.')
+		quit()
+	try:	
+		TOML = toml.load(fo, _dict=dict)
+	except toml.decoder.TomlDecodeError:
+		print ('Error in the format of the file %s. Verify that the information has been entered following the TOML format.'%(config))
+		quit()
 	Scenario = scenario(TOML)
 	while True:
 		inp = input("Insert the action you wish to perform (insert 'help' to see all available actions): ").strip().lower()
@@ -17,7 +29,7 @@ def main():
 		elif inp == 'write_czml' or inp == 'write czml':
 			Scenario.write_czml()
 			CZML_BOOL = True
-		elif inp == 'start_vms' or inp == 'vm':
+		elif inp == 'start_vms' or inp == 'start vms' or inp == 'vm':
 			Scenario.start_VMs()
 		elif inp == 'run' or inp == 'run_all' or inp == 'run all':
 			if not(CZML_BOOL):
@@ -86,15 +98,7 @@ def main():
 					if Exist:
 						break
 		elif inp == "exit":
-			while True:
-				ans = input("Do you want to delete all the VMs relete with the scenario?(Y/N):").strip().lower()
-				if ans == 'y' or ans == 'yes':
-					Scenario.delete_VMs()
-					break
-				elif ans == 'n' or ans == 'no':
-					break
-				else:
-					print('ERROR: Invalid answer')
+			Scenario.delete_VMs()
 			break
 		else:
 			print (inp," is not one of the available actions")

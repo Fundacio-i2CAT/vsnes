@@ -1,38 +1,69 @@
+network = '10.0.0.0/24'
 [Time]
-	# min
-	TimeInterval = 0.5
-	Contact_speed = 5
-	Non_contact_speed = 60
-	start_datetime = '2022-05-20 04:15:00'
-	end_datetime = '2022-05-20 06:30:00'
-[Network]
-	interface =  'virbr0'
-	network = '10.0.0.0/24'
+	TimeInterval = 0.5 #0.08333		#[min]
+	Contact_speed = 1
+	Non_contact_speed = 100
+	start_datetime = '2022-08-14 08:00:00'
+	end_datetime = '2022-08-14 10:10:00'
 [SpaceSegment]
 	[[SpaceSegment.SatelliteSistem]]
-		TLE = 'p1.tle'
-		channels = ['STARLINK']
+		group = 'LEO'
+		TLE = 'LEO.tle'
+		propagator = 'SGP4' 	#TwoBody or SGP4
+		Service = 'Relay' 	#Standard or Relay
 		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'default'
+			name_VM = 'ubuntu20.04' 
+			OS = 'ubuntu' 	#ubuntu o alpine
 			username = 'ubuntu'
-			password = 'ubuntu' 
+			password = 'ubuntu'
+			interface = 'enp1s0'
 [GroundSegment]
 	[[GroundSegment.GroundSistem]]
 		name = 'i2cat'
+		group = 'GS'
 		latitude = 41.38732849041236
 		longitude = 2.1118426322937003
 		height = 150
-		channels = ['GPS','STARLINK']
 		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'default'
-			username = 'ubuntu'
-			password = 'ubuntu'
-[Channel]
-	[[Channel.threshold]]
-		id = 'GPS'
-		inter-satellite_threshold = 0
-		Ground2Satellite_threshold = 50e6 
-	[[Channel.threshold]]
-		id = 'STARLINK'
-		inter-satellite_threshold = 1.5e6
-		Ground2Satellite_threshold = 40e6
+			name_VM = 'alpine' #
+			OS = 'alpine' #ubuntu o alpine
+			username = 'alpine'
+			password = 'alpine'
+			interface = 'eth0'
+	[[GroundSegment.GroundSistem]]
+		name = 'Milan'
+		group = 'GS'
+		latitude = 45.469692
+		longitude = 9.178557
+		height = 450
+		[GroundSegment.GroundSistem.clone_VM]
+			name_VM = 'alpine' #
+			OS = 'alpine' #ubuntu o alpine
+			username = 'alpine'
+			password = 'alpine'
+			interface = 'eth0'
+[Channels]
+	[[Channels.Channel]]
+		Node1 = 'IntelSat'		 #Group name
+		Node2 = 'GS'
+		Min_elevation_angle = 0 	#[deg]
+		Threshold = 40e6		#[m]
+		Data_rate =  100		#[Mbit]
+		Packet_loss = 0		#[%]
+		Correlated_losses = 0		#[%] Emulate packet burst losses
+	[[Channels.Channel]]
+		Node1 = 'IntelSat' 		#Group name
+		Node2 = 'LEO'
+		Min_elevation_angle = 0 	#[deg]
+		Threshold = 40e6		#[m]
+		Data_rate =  100		#[Mbit]
+		Packet_loss = 0		#[%]
+		Correlated_losses = 0		#[%] Emulate packet burst losses
+	[[Channels.Channel]]
+		Node1 = 'LEO' #Group name
+		Node2 = 'GS'
+		Min_elevation_angle = 0 	#[deg]
+		Threshold = 2e6		#[m]
+		Data_rate =  10000		#[Mbit]
+		Packet_loss = 0		#[%]
+		Correlated_losses = 0		#[%] Emulate packet burst losses

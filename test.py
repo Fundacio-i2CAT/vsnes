@@ -77,9 +77,10 @@ class ChannelTestCAse(unittest.TestCase):
 		self.assertEqual(len(self.scenarioTest._channel._dalay_matrix),0)
 		self.assertFalse(self.scenarioTest._channel.get_exist())
 	def test_get_channel(self):
-		self.assertEqual(self.scenarioTest._channel.get_channel(1,1),0)
+		self.assertEqual(self.scenarioTest._channel.get_channel(0,0),-2)
+		self.assertEqual(self.scenarioTest._channel.get_channel(1,1),-2)
 		self.assertEqual(self.scenarioTest._channel.get_channel(0,1),-1)
-		self.assertEqual(self.scenarioTest._channel.get_channel(0),[0,-1])
+		self.assertEqual(self.scenarioTest._channel.get_channel(0),[-2,-1])
 class TimeParametersTestCAse(unittest.TestCase):
 	def setUp(self):
 		with HiddenPrints():

@@ -7,21 +7,50 @@ class GroundStation(Node):
 		
 	def __init__(self,TOML_GS,network,mask, nNodes):
 		# Creates a GroundStation class object from three configuration lines
-		name = TOML_GS['name']
-		latitude = TOML_GS['latitude']
-		longitude = TOML_GS['longitude']
-		height = TOML_GS['height']
-		channels = TOML_GS['channels']
-		clone_VM = TOML_GS['clone_VM']
-		self._position = wgs84.latlon(latitude,longitude,height)
-		Node.__init__(self,name = name,channels = channels,cloneVM = clone_VM,network = network, mask = mask,nNodes = nNodes)
+		try:
+			name = TOML_GS['name']
+		except KeyError:
+			name = None
+		if name != None:
+			while True:
+				try:	
+					latitude = float(TOML_GS['latitude'])
+					break
+				except KeyError:
+					TOML_GS['latitude'] = input('Insert the %s latitude:'%(name))
+				except ValueError:
+					TOML_GS['latitude'] = input('Insert again the %s latitude:'%(name))
+			while True:
+				try:
+					longitude = float(TOML_GS['longitude'])
+					break
+				except KeyError:
+					TOML_GS['longitude'] = input('Insert the %s longitudde:'%(name))
+				except ValueError:
+					TOML_GS['longitude'] = input('Insert again the %s longitude:'%(name))
+			while True:	
+				try:
+					height = float(TOML_GS['height'])
+					break
+				except KeyError:
+					TOML_GS['height'] = input('Insert the %s height:'%(name))
+				except ValueError:
+					TOML_GS['height'] = input('Insert again the %s height:'%(name))
+			self._position = wgs84.latlon(latitude,longitude,height)
+		Node.__init__(self,name = name, Node = TOML_GS ,network = network, mask = mask,nNodes = nNodes)
 	def description(self):
 		description = '<h3>Ground Station %s (ip:%s)</h3>'%(self._name,self._ip)
 		description += '<p>Latitud: %fº</p>\n'%(self._position.latitude.degrees)
 		description += '<p>Longitude: %fº</p>\n'%(self._position.longitude.degrees)
 		description += '<p>Height: %d m</p>\n'%(self._position.elevation.m)
 		return description
-	def czml_node(self,datetime_vector,results,index):
+	def get_ECEF(self):
+		#Return the last saved position in ECEF[m]
+		return self._position.itrs_xyz.m
+	def get_LLH(self):
+		#Return the last saved position in Latitud[º], Longitud[º] and heigth [m]
+		return [self._position.latitude.degrees,self._position.longitude.degrees,self._position.elevation.m]
+	def czml_node(self,datetime_vector):
 		#Return object of type CZMLPacket
 		#Create a object of clas CZMLPacket
 		GS = czml.CZMLPacket(id=self.name)
@@ -53,15 +82,13 @@ class GroundStation(Node):
 		#Defines horizontalOrigin from the Label
 		label.horizontalOrigin ='CENTER'
 		#Defines verticalOrigin from the Label
-		label.verticalOrigin ='DOWN'
+		label.verticalOrigin ='UP'
 		#Defines scale from the Label
 		label.scale = 0.5
 		#Defines pixelOffset from the Label
-		label.pixelOffset = {"cartesian2":[30,20]}
+		label.pixelOffset = {"cartesian2":[0,-25]}
 		
 		description = czml.Description(self.description())
-		
-		#GS.description=str("Hello World")
 		#Defines billboard from the CZMLPacket
 		GS.billboard = bb
 		#Defines position from the CZMLPacket
@@ -70,5 +97,4 @@ class GroundStation(Node):
 		GS.label = label
 		
 		GS.description = description
-		results[index] = GS
 		return GS
