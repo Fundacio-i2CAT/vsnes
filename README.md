@@ -1,49 +1,187 @@
 <img src="https://wikifab.org/images/b/b6/Group-i2CAT_logo-color-alta.jpg" width=25% height=25%>
 
 [![Maintenance](https://img.shields.io/badge/Status-Maintained-green.svg)]()
-[![made-with-cpp](https://img.shields.io/badge/Made%20with-C%2B%2B-blue)](https://isocpp.org/)
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-blue)](https://www.python.org/)
 [![GPLv2 license](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 
-# Libraries to Simulate Satellite Networks
-This repository contains libraries that simulate satellite networks. Such libraries are compatible with the Distributed Satellite System Simulator (DSS-SIM). The description of the DSS-SIM can be found in the following paper: [Towards an Integral Model-Based Simulator for Autonomous Earth Observation Satellite Networks](https://ieeexplore.ieee.org/abstract/document/8517811). The current version of this repository allows to simulate the following aspects of the satellite networks:
-* **Propagation Models**: Allows the simulation of attenuation in RF communications due to the clouds.
-* **Medium Access Protocols**: Allows the simulation of the CSMA-CA including the and adapted Net Device Module.
-* **Spacecraft Subsystems**: Addition of a Solar cells model.
-* **Orbit Propagation**: Implements the SGP4 orbit propagation model.
+# Virtual Satellite Network Emulator (vsnes)
 
-# Pre-Requisites
-The prerequisites to use this repository are:
-* Distributed Satellite System Simulator (Contact i2CAT [here](https://i2cat.net/contact/))
-* Vallado's C++ library for SGP4 (Available online [here](https://github.com/Spacecraft-Code/Vallado/tree/master/cpp/SGP4/SGP4))
-* Network Simulator 3 (v3.35) (Available online [here](https://www.nsnam.org/releases/ns-3-35/))
+vsnes is a Python-based emulator for satellite networks. It reads a scenario from a TOML configuration file, propagates satellite orbits in real time, and shapes traffic between nodes using Linux `tc netem` rules running inside QEMU/libvirt virtual machines. An optional CesiumJS visualization shows satellite positions and link states in a browser.
 
-# How to build it
-This repository can not be directly build. To do so, files shall be added into its correspondent module of the DSS-SIM. After that the whole project must be build. Notice that the DSS_SIM is needed to be able to use these libraries.
+## Architecture
 
-# Technical Description
-In order to use these libraries the previous installation of the DSS-SIM is required (As mentioned in the [Prerequisites](#pre-requisites)). Each module from this repository is independent and can be use without the others. However, the DSS-SIM follows a certain architecture, in the following table the directory in where each module shall be placed is provided. In addition, it is important to mention that the Orbit Propagator that implements SGP4, uses Vallado's algorithm to propagate the orbit. As a consequence call to the source code of this SGP4 implementation is needed. For this reason, Such files (SGP4.cpp and SGP4.h) must be place within the Orbit Propagation module.
+```
+SatelliteEmulator.py       ← entry point / interactive CLI
+└── Class/
+    ├── Scenario.py        ← loads config, manages nodes and channels, drives emulation loop
+    ├── Node.py            ← base class: VM lifecycle (clone/start/delete), SSH config, VLAN setup
+    ├── Satellite.py       ← extends Node; holds orbit, ECI/ECEF position vectors
+    ├── Ground_Station.py  ← extends Node; fixed geodetic position
+    ├── Orbit.py           ← base orbit class
+    ├── SGP4.py            ← SGP4 orbit propagator (wraps skyfield)
+    ├── TwoBody.py         ← simplified two-body propagator
+    ├── Channel.py         ← delay/LoS matrix; updates tc netem rules live
+    ├── channel_threshold.py
+    ├── Time_parameters.py ← simulation clock, time stepping, speed multipliers
+    └── Server.py          ← Flask server serving CesiumJS visualization
+```
 
-|Developed module          |DSS-SIM Module            |
-|--------------------------|--------------------------|
-|Propagation Models        |Networking/Channels       |
-|Medium Access Protocols   |Networking/Net_Device     |
-|Spacecraft Subsystems     |Physical/Modules          |
-|Orbit Propagation         |Physical/Orbit_Trajectory |
+### How it works
 
-All these modules had been tested by using GTest and making unit tests for each of them before allowing them to be published. In order to use them, when preparing a simulation on the DSS-SIM, it is only needed to call functions such as: *sgp4Init* to propagate the SGP4 orbit, *getOutputPower* to obtain the output power obtained by the solar cells, *CsmaCaMacNetDevice* to create a Net Device that uses CSMA/CA, or *setCloudsPropagation* in the communications channel to retrieve the attenuation due to the clouds by means of *getAtt*. Notice that the communications channel is not provided in this repository as far as it is a part of the Distributed Satelllite System Simulator.
+1. **Load scenario** — `Scenario` reads the TOML file, instantiates `Satellite` and `GroundStation` nodes, and builds a delay matrix via `Channel`.
+2. **Orbit propagation** — each `Satellite` pre-computes ECI/ECEF position vectors for every time step using SGP4 or a Two-Body model.
+3. **Channel computation** — `Channel` calculates propagation delay (distance / *c*) for every node pair. Satellite-to-satellite uses ECI coordinates with Earth-occlusion check; ground-to-satellite uses ECEF + NED frame elevation-angle check.
+4. **VM emulation** — each node maps to a libvirt VM cloned from a base image. The host creates one VLAN per node on a shared bridge (`brSATEMU`). `tc htb + netem` rules enforce per-pair data rate, delay, packet loss, and burst loss.
+5. **Live update** — the emulation loop steps through time, recomputes delays, and updates `tc netem` rules on the fly via SSH.
+6. **Visualization** — an optional Flask + CesiumJS server reads a CZML file to animate satellite orbits and link state in the browser at `http://localhost:5000/`.
 
-Finally, it is important to mention that the code in these files can be extracted to adapt it to other simulation tools if it is not desired to use DSS-SIM.
+## Prerequisites
 
-# Source
-This code has been developed within the research / innovation project i2-22-RDI-IoT A2 DSS Sim. 
+| Requirement | Notes |
+|---|---|
+| Python 3.8+ | Tested with CPython 3.8 |
+| QEMU + libvirt | `qemu-system`, `libvirt-daemon-system` |
+| `virt-clone` | Part of `virtinst` / `virt-manager` |
+| `bridge-utils` | `brctl` for bridge setup |
+| `sshpass` | Passwordless SSH to VMs |
+| Base VM images | Ubuntu 20.04 and/or Alpine images registered in libvirt |
+
+Python packages: `skyfield`, `toml`, `czml`, `flask`, `julian`, `astropy`, `paramiko`, `sgp4`, `numpy`
+
+## Install
+
+Run the provided install script (requires `sudo`):
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+This installs system packages (`qemu`, `libvirt`, `virt-manager`, `bridge-utils`, `sshpass`, `pip`) and Python packages (`skyfield`, `toml`, `czml`, `flask`, `julian`, `astropy`), then starts the libvirt default network.
+
+To install Python dependencies manually:
+
+```bash
+pip install skyfield toml czml flask julian astropy paramiko sgp4 numpy
+```
+
+## Configuration
+
+Scenarios are defined in TOML files. See `test.toml` for a minimal example and `config.toml` for a full multi-constellation example.
+
+```toml
+network = '10.0.0.0/24'       # IP pool for node VMs
+
+[Time]
+  TimeInterval   = 0.5        # simulation step [min]
+  Contact_speed  = 5          # clock speed multiplier when links exist
+  Non_contact_speed = 60      # clock speed multiplier when no links exist
+  start_datetime = '2022-04-13 07:31:31'
+  end_datetime   = '2022-04-13 07:32:30'
+
+[SpaceSegment]
+  [[SpaceSegment.SatelliteSistem]]
+    TLE        = 'test.tle'   # path to TLE file (one or more satellites)
+    propagator = 'SGP4'       # 'SGP4' or 'TwoBody'
+    group      = 'IntelSat'   # group name referenced in Channels
+    Service    = 'Standard'   # 'Standard' or 'Relay'
+    [SpaceSegment.SatelliteSistem.clone_VM]
+      name_VM   = 'ubuntu20.04'
+      OS        = 'ubuntu'    # 'ubuntu' or 'alpine'
+      username  = 'ubuntu'
+      password  = 'ubuntu'
+      interface = 'enp1s0'
+
+[GroundSegment]
+  [[GroundSegment.GroundSistem]]
+    name      = 'i2cat'
+    group     = 'i2cat'
+    latitude  = 41.387
+    longitude = 2.112
+    height    = 150           # [m]
+    [GroundSegment.GroundSistem.clone_VM]
+      name_VM   = 'ubuntu20.04'
+      OS        = 'ubuntu'
+      username  = 'ubuntu'
+      password  = 'ubuntu'
+      interface = 'enp1s0'
+
+[Channels]
+  [[Channels.Channel]]
+    Node1               = 'IntelSat'  # group names from Space/GroundSegment
+    Node2               = 'i2cat'
+    Min_elevation_angle = 5           # minimum elevation angle [deg]
+    Threshold           = 10e6        # maximum range [m]
+    Data_rate           = 100         # [Mbit/s]
+    Packet_loss         = 0           # [%]
+    Correlated_losses   = 0           # burst loss correlation [%]
+```
+
+TLE files use standard two-line element format. Multiple satellites in one file are all added to the same constellation group.
+
+## Build & Execute
+
+No compilation step is required. Run directly with Python 3.
+
+### 1. Start the emulator
+
+```bash
+python3 SatelliteEmulator.py
+```
+
+You are prompted for a config file name (press Enter to use `config.toml`).
+
+### 2. Interactive commands
+
+Once loaded, the emulator accepts the following commands:
+
+| Command | Description |
+|---|---|
+| `help` | List all commands |
+| `scenario` | Print loaded nodes and types |
+| `start_VMs` | Clone and start a VM for every node |
+| `write_czml` | Generate the CesiumJS visualization file |
+| `run_all` | Start emulation + open Cesium in browser |
+| `run_emulator` | Start emulation only (no visualization) |
+| `run_CESIUM` | Start Cesium only (no emulation) |
+| `delete_VM` | Delete a specific VM or all VMs |
+| `ssh_connection` | Open SSH terminal to a node's VM |
+| `exit` | Shut down VMs and quit |
+
+### 3. Typical workflow
+
+```bash
+# 1. install dependencies (once)
+./install.sh
+
+# 2. prepare base VM images in libvirt (ubuntu20.04, alpine)
+
+# 3. run with the test scenario
+python3 SatelliteEmulator.py
+# > Insert config file: test.toml
+# > start_VMs          (waits for VMs to boot and configures VLANs)
+# > write_czml         (generates Cesium orbit data)
+# > run_all            (starts emulation and opens browser at http://localhost:5000/)
+# > exit               (shuts down VMs)
+```
+
+### Running without VMs (orbit/delay inspection only)
+
+Load the scenario and use `scenario` or `write_czml` without calling `start_VMs`. The delay matrix and CZML visualization work without running VMs.
+
+## Source
+
+Developed within i2-22-RDI-IoT A2 DSS Sim.
 Aquest projecte ha rebut finançament per part del Govern de la Generalitat de Catalunya dins del marc de l'estrategia [NewSpace](https://www.accio.gencat.cat/ca/serveis/banc-coneixement/cercador/BancConeixement/new_space_a_catalunya) a Catalunya.
 
-# Copyright
-This code has been developed by Fundació Privada Internet i Innovació Digital a Catalunya (i2CAT). i2CAT is a *non-profit research and innovation centre* that  promotes mission-driven knowledge to solve business challenges, co-create solutions with a transformative impact, empower citizens through open and participative digital social innovation with territorial capillarity, and promote pioneering and strategic initiatives. i2CAT *aims to transfer* research project results to private companies in order to create social and economic impact via the out-licensing of intellectual property and the creation of spin-offs.
-Find more information of i2CAT projects and IP rights at https://i2cat.net/tech-transfer/
+## Copyright
 
-# Licence
-This code is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. Information about the license can be found at (https://www.gnu.org/licenses/agpl-3.0.en.html).
+Developed by Fundació Privada Internet i Innovació Digital a Catalunya (i2CAT).
+Find more information at https://i2cat.net/tech-transfer/
 
-If you find that this license doesn't fit with your requirements regarding the use, distribution or redistribution of our code for your specific work, please, don’t hesitate to contact the intellectual property managers in i2CAT at the following address: techtransfer@i2cat.net.
+## Licence
+
+Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. See https://www.gnu.org/licenses/agpl-3.0.en.html.
+
+For licensing enquiries: techtransfer@i2cat.net
