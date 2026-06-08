@@ -145,12 +145,13 @@ class TwoBody(Orbit):
 		#Load a timescale in the datetime
 		ECI = []
 		ECEF = []
+		POS = []
 		for datetime in datetime_vector:
 			ECEF_1 = self._Kepler2ECEF(datetime)
 			ECEF.append(ECEF_1)
 			ECI_1 = self._ECEF2ECI(ECEF_1,datetime)
 			ECI.append(ECI_1)
-		return ECI,ECEF
+		return ECI,ECEF,POS
 	def _ECI(self,datetime):
 		# Return cartesian cordinates in ECI [x,y,z]
 		#Load a timescale in the datetime

@@ -1,0 +1,9 @@
+Positions/*
+!Positions/README.md
+Class/__pycache__/
+__pycache__/
+cesium.log
+Class/templates/ScenarioCZML.czml
+runtime_bash.sh
+shutdown_bash.sh
+.planning/

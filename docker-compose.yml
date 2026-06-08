@@ -1,0 +1,349 @@
+services:
+  satellite-1:
+    build: ./docker
+    container_name: SATELLITE-1
+    hostname: SATELLITE-1
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-1:/var/lib/rancher/k3s
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.101
+    restart: unless-stopped
+
+  satellite-2:
+    build: ./docker
+    container_name: SATELLITE-2
+    hostname: SATELLITE-2
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-2:/var/lib/rancher/k3s
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.102
+    restart: unless-stopped
+
+  satellite-3:
+    build: ./docker
+    container_name: SATELLITE-3
+    hostname: SATELLITE-3
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-3:/var/lib/rancher/k3s
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.103
+    restart: unless-stopped
+
+  satellite-4:
+    build: ./docker
+    container_name: SATELLITE-4
+    hostname: SATELLITE-4
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-4:/var/lib/rancher/k3s
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.104
+    restart: unless-stopped
+
+  satellite-5:
+    build: ./docker
+    container_name: SATELLITE-5
+    hostname: SATELLITE-5
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.105
+    restart: unless-stopped
+
+  satellite-6:
+    build: ./docker
+    container_name: SATELLITE-6
+    hostname: SATELLITE-6
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.106
+    restart: unless-stopped
+
+  satellite-7:
+    build: ./docker
+    container_name: SATELLITE-7
+    hostname: SATELLITE-7
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.107
+    restart: unless-stopped
+
+  satellite-8:
+    build: ./docker
+    container_name: SATELLITE-8
+    hostname: SATELLITE-8
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.108
+    restart: unless-stopped
+
+  satellite-9:
+    build: ./docker
+    container_name: SATELLITE-9
+    hostname: SATELLITE-9
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.109
+    restart: unless-stopped
+
+  satellite-10:
+    build: ./docker
+    container_name: SATELLITE-10
+    hostname: SATELLITE-10
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.110
+    restart: unless-stopped
+
+  satellite-11:
+    build: ./docker
+    container_name: SATELLITE-11
+    hostname: SATELLITE-11
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.111
+    restart: unless-stopped
+
+  satellite-12:
+    build: ./docker
+    container_name: SATELLITE-12
+    hostname: SATELLITE-12
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.112
+    restart: unless-stopped
+
+  satellite-13:
+    build: ./docker
+    container_name: SATELLITE-13
+    hostname: SATELLITE-13
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.113
+    restart: unless-stopped
+
+  satellite-14:
+    build: ./docker
+    container_name: SATELLITE-14
+    hostname: SATELLITE-14
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.114
+    restart: unless-stopped
+
+  satellite-15:
+    build: ./docker
+    container_name: SATELLITE-15
+    hostname: SATELLITE-15
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.115
+    restart: unless-stopped
+
+  satellite-16:
+    build: ./docker
+    container_name: SATELLITE-16
+    hostname: SATELLITE-16
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.116
+    restart: unless-stopped
+
+  satellite-17:
+    build: ./docker
+    container_name: SATELLITE-17
+    hostname: SATELLITE-17
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.117
+    restart: unless-stopped
+
+  satellite-18:
+    build: ./docker
+    container_name: SATELLITE-18
+    hostname: SATELLITE-18
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.118
+    restart: unless-stopped
+
+  satellite-19:
+    build: ./docker
+    container_name: SATELLITE-19
+    hostname: SATELLITE-19
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.119
+    restart: unless-stopped
+
+  ibi_es:
+    build: ./docker
+    container_name: Ibi_ES
+    hostname: Ibi_ES
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.201
+    restart: unless-stopped
+
+  foggia_it:
+    build: ./docker
+    container_name: Foggia_IT
+    hostname: Foggia_IT
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.202
+    restart: unless-stopped
+
+volumes:
+  k3s-data-1:
+  k3s-data-2:
+  k3s-data-3:
+  k3s-data-4:
+
+networks:
+  vsnes:
+    name: vsnes_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.27.12.0/24

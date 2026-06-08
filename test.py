@@ -74,7 +74,7 @@ class ChannelTestCAse(unittest.TestCase):
 			fo.close()
 	def test_delete(self):
 		self.scenarioTest._channel.delete()
-		self.assertEqual(len(self.scenarioTest._channel._dalay_matrix),0)
+		self.assertEqual(len(self.scenarioTest._channel._delay_matrix),0)
 		self.assertFalse(self.scenarioTest._channel.get_exist())
 	def test_get_channel(self):
 		self.assertEqual(self.scenarioTest._channel.get_channel(0,0),-2)

@@ -1,36 +1,581 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <link rel='icon'href=data:;" />
-  <meta charset="utf-8">
-  <title>{{data.title}}</title>
-  <!-- Include the CesiumJS JavaScript and CSS files -->
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satellite Simulation Interface</title>
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename= 'assets/images/icons/satellite.png') }}" type="image/png">
+    <!-- Include the CesiumJS JavaScript and CSS files -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename= 'css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename= 'css/responsive-fixes.css') }}" rel="stylesheet">
+
+    <script src="{{ url_for('static', filename= 'js/satellite.min.js') }}"></script>
+
 </head>
+
 <body>
-  <div id="cesiumContainer"></div>
-  <script>
-    function Reload(elementos){
-    	let clock = czml.load('ScenarioCZML.czml');
-    }
-    // Your access token can be found at: https://cesium.com/ion/tokens.
-    // This is the default access token from your ion account
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMjUxZDk4OS1lMzdiLTQ3OTAtYWQ3Ny03OTE0OTYzNjlmNTEiLCJpZCI6ODg3OTIsImlhdCI6MTY0OTQwNTI4Mn0.nvrvhF553Lce6ANNU9r5U9HTwXD10Vq4IOdf32kGiIc';
-    // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.createWorldTerrain()
-    });
-    let czml = new Cesium.CzmlDataSource();
-    let elementos = czml.load('ScenarioCZML.czml');
-    viewer.dataSources.add(elementos);
-    if ({{data.EMU}}){
-      viewer.animation.destroy();
-      viewer.timeline.destroy();
-      viewer.clock.shouldAnimate = true;
-      window.setInterval(elementos = Reload,{{data.timer}},elementos);
-    }
-  </script>
- </div>
+    <!-- Main Cesium container -->
+    <div id="cesiumContainer"></div>
+
+    <!-- Control Panel -->
+    <div id="controlPanel" class="control-panel">
+        <div class="control-panel-header">
+            <h2 class="control-panel-title">Mission Control</h2>
+            <button id="closeControlPanel" class="btn-close btn-icon" aria-label="Close panel">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/close.png') }}" alt="Close">
+            </button>
+        </div>
+
+        <!-- Configuration Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Configuration</h3>
+
+            <div class="form-group">
+                <button id="genConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/download.png') }}" alt="Settings">
+                    Generate Configuration
+                </button>
+                <div class="file-input-container">
+                    <input type="file" id="configFile" class="file-input" accept=".toml">
+                    <label for="configFile" class="file-input-label">
+                        <img src="{{ url_for('static', filename= 'assets/images/icons/upload.png') }}" alt="Upload"
+                            class="btn-icon-img">
+                        Select Config File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/file.png') }}" alt="Upload">
+                    Upload Config
+                </button>
+            </div>
+
+            <div class="form-group">
+                <div class="file-input-container">
+                    <input type="file" id="tleFile" class="file-input" accept=".tle">
+                    <label for="tleFile" class="file-input-label">
+                        <img src="{{ url_for('static', filename= 'assets/images/icons/upload.png') }}" alt="Upload"
+                            class="btn-icon-img">
+                        Select TLE File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadTLEBtn" class="btn btn-secondary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/file.png') }}" alt="Upload">
+                    Upload TLE
+                </button>
+            </div>
+
+            <button id="loadConfigBtn" class="btn btn-primary btn-icon">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/settings.png') }}" alt="Settings">
+                Load Configuration
+            </button>
+
+
+            <button id="initScenarioBtn" class="btn btn-primary btn-icon">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/settings.png') }}" alt="Settings">
+                Init Scenario
+            </button>
+
+            <button id="stopAllVMsBtn" class="btn btn-secondary btn-icon">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/stop.png') }}" alt="Settings">
+                Stop all VMs
+            </button>
+
+            <button id="loadAndViewTLEBtn" class="btn btn-primary btn-icon">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/eye.png') }}" alt="View">
+                Load & View TLE
+            </button>
+
+        </section>
+
+        <!-- Simulation Control Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Simulation Control</h3>
+
+            <div class="checkbox-container">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="runVmsCheckbox">
+                    <span class="checkmark"></span>
+                </label>
+                <span>Run Simulation</span>
+            </div>
+
+            <div class="d-flex justify-between mt-2">
+                <button id="startSimulationBtn" class="btn btn-success btn-icon" style="width: 48%;">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/play.png') }}" alt="Play">
+                    Start
+                </button>
+                <button id="stopSimulationBtn" class="btn btn-danger btn-icon" style="width: 48%;">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/stop.png') }}" alt="Stop">
+                    Stop
+                </button>
+            </div>
+            <button id="getStatusBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/status.png') }}" alt="Status">
+                Get Status
+            </button>
+            <button id="reloadCzmlBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/eye.png') }}" alt="Reload">
+                Reload CZML
+            </button>
+        </section>
+
+        <!-- Status Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">System Status</h3>
+
+            <div class="d-flex align-center mb-1">
+                <span id="statusMessage" class="status-message status-normal ml-1">System ready</span>
+            </div>
+
+            <div class="d-flex align-center mt-1 mb-1">
+                <span id="simulationTimeDisplay" class="status-message status-normal ml-1">Sim Time: N/A</span>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Toggle Button (initially hidden) -->
+    <button id="toggleControlPanel" class="toggle-button" style="display: none;">
+        <img src="{{ url_for('static', filename= 'assets/images/icons/menu.png') }}" alt="Menu">
+    </button>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Configuration Floating Window -->
+    <div id="configWindow" class="floating-window">
+        <div class="floating-window-header">
+            <h2 class="floating-window-title">Configuration Editor</h2>
+            <button id="closeConfigWindow" class="btn-close btn-icon" aria-label="Close window">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/close.png') }}" alt="Close">
+            </button>
+        </div>
+
+        <div class="floating-window-content">
+            <!-- Network Configuration -->
+            <div class="form-group">
+                <label for="networkInput" class="form-label">Network</label>
+                <input type="text" id="networkInput" class="form-control" placeholder="10.0.0.0/24">
+            </div>
+
+            <!-- Time Parameters Section -->
+            <section class="config-section">
+                <h3 class="config-section-title">Time Parameters</h3>
+
+                <div class="form-group">
+                    <label for="timeIntervalInput" class="form-label">Time Interval (min)</label>
+                    <input type="number" id="timeIntervalInput" class="form-control" placeholder="1" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label for="contactSpeedInput" class="form-label">Contact Speed</label>
+                    <input type="number" id="contactSpeedInput" class="form-control" placeholder="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="nonContactSpeedInput" class="form-label">Non-Contact Speed</label>
+                    <input type="number" id="nonContactSpeedInput" class="form-control" placeholder="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="startDatetimeInput" class="form-label">Start Date/Time</label>
+                    <input type="datetime-local" id="startDatetimeInput" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="endDatetimeInput" class="form-label">End Date/Time</label>
+                    <input type="datetime-local" id="endDatetimeInput" class="form-control">
+                </div>
+            </section>
+
+            <!-- Space Segment Section -->
+            <section class="config-section">
+                <h3 class="config-section-title">Space Segment</h3>
+
+                <div class="form-group">
+                    <label for="tlePathInput" class="form-label">TLE File</label>
+                    <input type="text" id="tlePathInput" class="form-control" placeholder="test.tle" readonly>
+                </div>
+
+                <div class="satellite-systems">
+                    <h4 class="subsection-title">Satellite Systems</h4>
+
+                    <div id="satelliteSystemsContainer">
+                        <!-- Satellite system entries will be added here dynamically -->
+                        <div class="satellite-system">
+                            <div class="system-header">
+                                <h5 class="system-title">SATELLITE-1</h5>
+                                <button class="btn-icon remove-system" aria-label="Remove satellite">
+                                    <img src="{{ url_for('static', filename= 'assets/images/icons/delete.png') }}"
+                                        alt="Remove">
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sat1-name" class="form-label">Name</label>
+                                <input type="text" id="sat1-name" class="form-control" value="SATELLITE-1">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-propagator" class="form-label">Propagator</label>
+                                    <select id="sat1-propagator" class="form-control">
+                                        <option value="SGP4">SGP4</option>
+                                        <option value="TwoBody">TwoBody</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-service" class="form-label">Service</label>
+                                    <select id="sat1-service" class="form-control">
+                                        <option value="Standard">Standard</option>
+                                        <option value="Relay">Relay</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sat1-group" class="form-label">Group</label>
+                                <input type="text" id="sat1-group" class="form-control" value="LEO">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-os" class="form-label">OS</label>
+                                    <select id="sat1-os" class="form-control">
+                                        <option value="debian">Debian</option>
+                                        <option value="ubuntu">Ubuntu</option>
+                                        <option value="alpine">Alpine</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-isvm" class="form-label">Is External VM</label>
+                                    <select id="sat1-isvm" class="form-control">
+                                        <option value="0">No (Internal)</option>
+                                        <option value="1">Yes (External)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-username" class="form-label">Username</label>
+                                    <input type="text" id="sat1-username" class="form-control" value="debian">
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-password" class="form-label">Password</label>
+                                    <input type="password" id="sat1-password" class="form-control" value="debian">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-ip" class="form-label">IP External</label>
+                                    <input type="text" id="sat1-ip" class="form-control" value="172.27.12.101">
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="sat1-interface" class="form-label">Interface</label>
+                                    <input type="text" id="sat1-interface" class="form-control" value="eth0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sat1-vm-name" class="form-label">VM Name</label>
+                                <input type="text" id="sat1-vm-name" class="form-control" value="debian11">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="addSatelliteBtn" class="btn btn-secondary btn-icon mt-1">
+                        <img src="{{ url_for('static', filename= 'assets/images/icons/add.png') }}" alt="Add">
+                        Add Satellite
+                    </button>
+                </div>
+            </section>
+
+            <!-- Ground Segment Section -->
+            <section class="config-section">
+                <h3 class="config-section-title">Ground Segment</h3>
+
+                <div class="ground-stations">
+                    <h4 class="subsection-title">Ground Stations</h4>
+
+                    <div id="groundStationsContainer">
+                        <!-- Ground station entries will be added here dynamically -->
+                        <div class="ground-station">
+                            <div class="system-header">
+                                <h5 class="system-title">GS</h5>
+                                <button class="btn-icon remove-system" aria-label="Remove ground station">
+                                    <img src="{{ url_for('static', filename= 'assets/images/icons/delete.png') }}"
+                                        alt="Remove">
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gs1-name" class="form-label">Name</label>
+                                <input type="text" id="gs1-name" class="form-control" value="GS">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gs1-group" class="form-label">Group</label>
+                                <input type="text" id="gs1-group" class="form-control" value="GS">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 32%;">
+                                    <label for="gs1-latitude" class="form-label">Latitude</label>
+                                    <input type="number" id="gs1-latitude" class="form-control"
+                                        value="41.38732849041236" step="0.000001">
+                                </div>
+
+                                <div class="form-group" style="width: 32%;">
+                                    <label for="gs1-longitude" class="form-label">Longitude</label>
+                                    <input type="number" id="gs1-longitude" class="form-control"
+                                        value="2.1118426322937003" step="0.000001">
+                                </div>
+
+                                <div class="form-group" style="width: 32%;">
+                                    <label for="gs1-height" class="form-label">Height</label>
+                                    <input type="number" id="gs1-height" class="form-control" value="15">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-os" class="form-label">OS</label>
+                                    <select id="gs1-os" class="form-control">
+                                        <option value="debian">Debian</option>
+                                        <option value="ubuntu">Ubuntu</option>
+                                        <option value="alpine">Alpine</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-interface" class="form-label">Interface</label>
+                                    <input type="text" id="gs1-interface" class="form-control" value="eth0">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-isvm" class="form-label">Is External VM</label>
+                                    <select id="gs1-isvm" class="form-control">
+                                        <option value="0">No (Internal)</option>
+                                        <option value="1">Yes (External)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-ip" class="form-label">IP External</label>
+                                    <input type="text" id="gs1-ip" class="form-control" value="172.27.12.103">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-username" class="form-label">Username</label>
+                                    <input type="text" id="gs1-username" class="form-control" value="debian">
+                                </div>
+
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="gs1-password" class="form-label">Password</label>
+                                    <input type="password" id="gs1-password" class="form-control" value="debian">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gs1-vm-name" class="form-label">VM Name</label>
+                                <input type="text" id="gs1-vm-name" class="form-control" value="debian11">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="addGroundStationBtn" class="btn btn-secondary btn-icon mt-1">
+                        <img src="{{ url_for('static', filename= 'assets/images/icons/add.png') }}" alt="Add">
+                        Add Ground Station
+                    </button>
+                </div>
+            </section>
+
+            <!-- Channels Section -->
+            <section class="config-section">
+                <h3 class="config-section-title">Channels</h3>
+
+                <div id="channelsContainer">
+                    <!-- Channel entries will be added here dynamically -->
+                    <div class="channel">
+                        <div class="system-header">
+                            <h5 class="system-title">Channel 1</h5>
+                            <button class="btn-icon remove-system" aria-label="Remove channel">
+                                <img src="{{ url_for('static', filename= 'assets/images/icons/delete.png') }}"
+                                    alt="Remove">
+                            </button>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-node1" class="form-label">Node 1</label>
+                                <input type="text" id="ch1-node1" class="form-control" value="LEO">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-node2" class="form-label">Node 2</label>
+                                <input type="text" id="ch1-node2" class="form-control" value="GS">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-elevation" class="form-label">Min Elevation Angle (deg)</label>
+                                <input type="number" id="ch1-elevation" class="form-control" value="0">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-threshold" class="form-label">Threshold (m)</label>
+                                <input type="number" id="ch1-threshold" class="form-control" value="2e12">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-datarate" class="form-label">Data Rate (Mbit)</label>
+                                <input type="number" id="ch1-datarate" class="form-control" value="10000">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch1-packetloss" class="form-label">Packet Loss (%)</label>
+                                <input type="number" id="ch1-packetloss" class="form-control" value="0" min="0"
+                                    max="100" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ch1-correlatedlosses" class="form-label">Correlated Losses (%)</label>
+                            <input type="number" id="ch1-correlatedlosses" class="form-control" value="0" min="0"
+                                max="100" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="channel">
+                        <div class="system-header">
+                            <h5 class="system-title">Channel 2</h5>
+                            <button class="btn-icon remove-system" aria-label="Remove channel">
+                                <img src="{{ url_for('static', filename= 'assets/images/icons/delete.png') }}"
+                                    alt="Remove">
+                            </button>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-node1" class="form-label">Node 1</label>
+                                <input type="text" id="ch2-node1" class="form-control" value="LEO">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-node2" class="form-label">Node 2</label>
+                                <input type="text" id="ch2-node2" class="form-control" value="LEO">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-elevation" class="form-label">Min Elevation Angle (deg)</label>
+                                <input type="number" id="ch2-elevation" class="form-control" value="0">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-threshold" class="form-label">Threshold (m)</label>
+                                <input type="number" id="ch2-threshold" class="form-control" value="5e12">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-datarate" class="form-label">Data Rate (Mbit)</label>
+                                <input type="number" id="ch2-datarate" class="form-control" value="1000">
+                            </div>
+
+                            <div class="form-group" style="width: 48%;">
+                                <label for="ch2-packetloss" class="form-label">Packet Loss (%)</label>
+                                <input type="number" id="ch2-packetloss" class="form-control" value="0" min="0"
+                                    max="100" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ch2-correlatedlosses" class="form-label">Correlated Losses (%)</label>
+                            <input type="number" id="ch2-correlatedlosses" class="form-control" value="0" min="0"
+                                max="100" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="addChannelBtn" class="btn btn-secondary btn-icon mt-1">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/add.png') }}" alt="Add">
+                    Add Channel
+                </button>
+            </section>
+
+            <!-- Summary Section -->
+            <section class="config-section">
+                <h3 class="config-section-title">Configuration Summary</h3>
+
+                <div class="summary-container">
+                    <div class="summary-item">
+                        <span class="summary-label">Satellites:</span>
+                        <span id="satelliteCount" class="summary-value">1</span>
+                    </div>
+
+                    <div class="summary-item">
+                        <span class="summary-label">Ground Stations:</span>
+                        <span id="groundStationCount" class="summary-value">1</span>
+                    </div>
+
+                    <div class="summary-item">
+                        <span class="summary-label">Channels:</span>
+                        <span id="channelCount" class="summary-value">2</span>
+                    </div>
+
+                    <div class="summary-item">
+                        <span class="summary-label">Simulation Period:</span>
+                        <span id="simulationPeriod" class="summary-value">2h 5m</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="generateConfigBtn" class="btn btn-primary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/download.png') }}" alt="Download">
+                    Generate & Download Config
+                </button>
+
+                <button id="generateComposeBtn" class="btn btn-primary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/download.png') }}" alt="Download">
+                    Export Docker Compose
+                </button>
+
+                <button id="cancelConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="{{ url_for('static', filename= 'assets/images/icons/cancel.png') }}" alt="Cancel">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename= 'js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename= 'js/config.js') }}"></script>
 </body>
+
 </html>

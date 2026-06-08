@@ -19,6 +19,15 @@ class SGP4(Orbit):
 		#Recalcule the position in relation of the geoid wgs84
 		position = wgs84.geographic_position_of(geocentric)
 		return position.itrs_xyz.m
+	def _POS(self,datetime):
+		# Return cartesian cordinates in ECEF [x,y,z]
+		#Load a timescale in the datetime
+		ts = load.timescale().from_datetime(datetime)
+		#Calcule the position in ECI cordinates
+		geocentric = self._TLE.at(ts)
+		#Recalcule the position in relation of the geoid wgs84
+		position = wgs84.geographic_position_of(geocentric)
+		return [position.latitude.degrees,position.longitude.degrees,position.elevation.m]
 	def _ECI(self,datetime):
 		# Return cartesian cordinates in ECI [x,y,z]
 		#Load a timescale in the datetime
@@ -32,6 +41,7 @@ class SGP4(Orbit):
 		#Load a timescale in the datetime
 		ECI = []
 		ECEF = []
+		POS = []
 		for datetime in datetime_vector:
 			ts = load.timescale().from_datetime(datetime)
 			#Calcule the position in ECI cordinates
@@ -39,4 +49,5 @@ class SGP4(Orbit):
 			ECI.append(geocentric.position.m)
 			position = wgs84.geographic_position_of(geocentric)
 			ECEF.append(position.itrs_xyz.m)
-		return ECI,ECEF
+			POS.append([position.latitude.degrees,position.longitude.degrees,position.elevation.m])
+		return ECI,ECEF,POS

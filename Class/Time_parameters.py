@@ -1,115 +1,129 @@
 #!/usr/bin/env python3
 from skyfield.api import load
 from datetime import datetime,timedelta
+import logging
+
 ts = load.timescale()
 
 class time_parameters:
-	'''The time_parameters class define how the instant of time change during the emulation'''
+	'''The time_parameters class define how each instant of time change during the emulation'''
 	#The TimeInterval is a timedelta which inticate the minute elapse between every step of time
 	_TimeInterval = None	#[min]
 	
-	#The contact_speed property defines the relation of the emulation time with the real one when exit contact at least between two nodes
+	#The contact_speed property defines the relation of emulation time with the real one when exist contact at least between two nodes
 	_contact_speed = None	
 	
-	#The non_contact_speed property defines the relation of the emulation time with the real one when  not exit contact between any node	
+	#The non_contact_speed property defines the relation of emulation time with the real one when not exist contact between any node	
 	_non_contact_speed = None
 	
 	#The datetime_vector property defines a list of datetime objects. That objects define all the instants of the emulation.
 	_datetime_vector= None
 	
-	#The marker property indicates in that position of the datetime list is the emulation
+	#The marker property indicates in that position of datetime list is the emulation
 	_marker = None 
 	
 	def __init__(self,TOMLTime):
 		#Save in variable the information of TOML file related with time 
-		while True:	
-			try:
-				TimeInterval = float(TOMLTime['TimeInterval'])
-				break
-			except KeyError:
-				TOMLTime['TimeInterval'] = input('Insert the time interval in minutes:')
-			except ValueError:
-				TOMLTime['TimeInterval'] = input('Insert again the time interval in minutes:')
-		while True:
-			try:
-				contact_speed = float(TOMLTime['Contact_speed'])
-				break
-			except KeyError:
-				TOMLTime['Contact_speed'] = input('Insert the contact speed:')
-			except ValueError:
-				TOMLTime['Contact_speed'] = input('Insert again the contact speed:')
-		while True:
-			try:
-				non_contact_speed = float(TOMLTime['Non_contact_speed'])
-				break
-			except KeyError:
-				TOMLTime['Non_contact_speed'] = input('Insert the non-contact speed:')
-			except ValueError:
-				TOMLTime['Non_contact_speed'] = input('Insert again the non-contact speed:')
-		while True:
-			try:
-				start_date_time = TOMLTime['start_datetime']
-				break
-			except KeyError:
-				TOMLTime['start_datetime'] = input('Insert the start_datetime (e.i YYYY-MM-DD hh:mm:ss)')
-		while True:
-			try:
-				end_date_time = TOMLTime['end_datetime']
-				break
-			except KeyError:
-				TOMLTime['end_datetime'] = input('Insert again the end_datetime (e.i YYYY-MM-DD hh:mm:ss)')
-		#Check if the value is correct. TimeInterval have to be greater than 0
-		if float(TimeInterval) > 0: 
+		logging.info("Initializing time parameters from TOML configuration")
+		
+		# Get TimeInterval with proper error handling
+		try:
+			TimeInterval = float(TOMLTime['TimeInterval'])
+			if TimeInterval <= 0:
+				raise ValueError("TimeInterval must be greater than 0")
 			self._TimeInterval = timedelta(minutes=float(TimeInterval))
-		else:
-			#When the value is not possible defines a default value
-			print ('ERROR: invalid parameter, TimeInterval cannot be negative or equal to 0')
+			logging.info(f"Time interval set to {TimeInterval} minutes")
+		except KeyError:
+			error_msg = "Missing 'TimeInterval' configuration in TOML"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
+		except ValueError as e:
+			error_msg = f"Invalid TimeInterval value: {e}. Using default of 1 minute"
+			logging.error(error_msg)
 			self._TimeInterval = timedelta(minutes=1)
-		#Check if the value is correct. contact_speed have to be greater than 0
-		if float(contact_speed) > 0:
+		
+		# Get contact_speed with proper error handling
+		try:
+			contact_speed = float(TOMLTime['Contact_speed'])
+			if contact_speed <= 0:
+				raise ValueError("Contact_speed must be greater than 0")
 			self._contact_speed = float(contact_speed)
-		else: 
-			#When the value is not possible defines a default value
-			print ('ERROR: invalid parameter, speed cannot be negative or equal to 0')
+			logging.info(f"Contact speed set to {contact_speed}x")
+		except KeyError:
+			error_msg = "Missing 'Contact_speed' configuration in TOML"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
+		except ValueError as e:
+			error_msg = f"Invalid Contact_speed value: {e}. Using default of 1x"
+			logging.error(error_msg)
 			self._contact_speed = 1
-		#Check if the value is correct. non_contact_speed have to be greater than 0
-		if float(non_contact_speed) > 0:
+		
+		# Get non_contact_speed with proper error handling
+		try:
+			non_contact_speed = float(TOMLTime['Non_contact_speed'])
+			if non_contact_speed <= 0:
+				raise ValueError("Non_contact_speed must be greater than 0")
 			self._non_contact_speed = float(non_contact_speed)
-		else: 
-			#When the value is not possible defines a default value
-			print ('ERROR: invalid parameter, speed cannot be negative or equal to 0')
+			logging.info(f"Non-contact speed set to {non_contact_speed}x")
+		except KeyError:
+			error_msg = "Missing 'Non_contact_speed' configuration in TOML"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
+		except ValueError as e:
+			error_msg = f"Invalid Non_contact_speed value: {e}. Using default of 1x"
+			logging.error(error_msg)
 			self._non_contact_speed = 1
-		while True:
-			if 11 > (len(start_date_time)):
+		
+		# Get start_datetime with proper error handling
+		try:
+			start_date_time = TOMLTime['start_datetime']
+			if len(start_date_time) <= 11:
 				start_date_time += ' 00:00:00'
-			date_time = start_date_time+'+00:00'
-			try:
-				date_time = datetime.fromisoformat(date_time)
-				TOMLTime['start_datetime'] = date_time
-				break
-			except ValueError:
-				print('ERROR: Invalit format.')
-				start_date_time = input('Insert again the start_datetime (e.i YYYY-MM-DD hh:mm:ss)')
-		initial_date_time = date_time
-		while True:
-			if 11 > (len(end_date_time)):
+			start_date_time = start_date_time + '+00:00'
+			start_date_time = datetime.fromisoformat(start_date_time)
+			logging.info(f"Start datetime set to {start_date_time}")
+		except KeyError:
+			error_msg = "Missing 'start_datetime' configuration in TOML"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
+		except ValueError as e:
+			error_msg = f"Invalid start_datetime format: {e}"
+			logging.error(error_msg)
+			raise ValueError(error_msg)
+		
+		# Get end_datetime with proper error handling
+		try:
+			end_date_time = TOMLTime['end_datetime']
+			if len(end_date_time) <= 11:
 				end_date_time += ' 00:00:00'
-			str_end_date_time = end_date_time+'+00:00'
-			try:
-				end_date_time = datetime.fromisoformat(str_end_date_time)
-				TOMLTime['start_datetime'] = end_date_time
-				break
-			except ValueError:
-				print('ERROR: Invalit format.')
-				end_date_time = input('Insert again the end_datetime (e.i YYYY-MM-DD hh:mm:ss)')
-		if end_date_time <= initial_date_time:
-			date_time =end_date_time
-			end_date_time = initial_date_time
+			end_date_time = end_date_time + '+00:00'
+			end_date_time = datetime.fromisoformat(end_date_time)
+			logging.info(f"End datetime set to {end_date_time}")
+		except KeyError:
+			error_msg = "Missing 'end_datetime' configuration in TOML"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
+		except ValueError as e:
+			error_msg = f"Invalid end_datetime format: {e}"
+			logging.error(error_msg)
+			raise ValueError(error_msg)
+		
+		# Validate date range
+		if end_date_time <= start_date_time:
+			logging.warning("End datetime is before or equal to start datetime, swapping values")
+			date_time = end_date_time
+			end_date_time = start_date_time
+			start_date_time = date_time
+		
+		# Generate datetime vector
 		self._datetime_vector = []
-		while end_date_time > date_time:
-			self._datetime_vector.append(date_time)
-			date_time += self._TimeInterval
+		current_time = start_date_time
+		while end_date_time > current_time:
+			self._datetime_vector.append(current_time)
+			current_time += self._TimeInterval
 		self._marker = 0
+		
+		logging.info(f"Time parameters initialized with {len(self._datetime_vector)} time steps")
 	def get_speed (self,channel = True):
 		#Return a speed. If channel is True, it returns contact speed if not returns non contact speed
 		if channel:

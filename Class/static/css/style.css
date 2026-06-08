@@ -1,0 +1,676 @@
+/* SpaceX-Inspired Satellite Simulation Interface
+   Main Stylesheet */
+
+/* Import font definitions */
+@import url('fonts.css');
+
+/* CSS Reset and Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #ededea;
+  background-color: #010203;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+h1 {
+  font-size: 32px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+h4 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+h5 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+p {
+  margin-bottom: 16px;
+}
+
+/* Main Container */
+#cesiumContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Control Panel */
+.control-panel {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: rgba(24, 31, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  width: 320px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
+}
+
+.control-panel.hidden {
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+}
+
+.control-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.control-panel-section {
+  background-color: rgba(30, 39, 46, 0.6);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.control-panel-section-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  color: rgba(237, 237, 234, 0.7);
+}
+
+/* Toggle Button */
+.toggle-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #005288;
+  color: #ededea;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-button:hover {
+  background-color: #0069b0;
+}
+
+.toggle-button img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1);
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  margin: 8px 0;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-close {
+  padding: 5px 8px;
+  margin: 8px 0;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.1);
+  color: #ededea;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary {
+  background-color: #005288;
+  color: #ededea;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.15);
+}
+
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ededea;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-success {
+  background-color: #1eae98;
+  color: #ededea;
+}
+
+.btn-success:hover {
+  filter: brightness(1.15);
+}
+
+.btn-danger {
+  background-color: #ff6b6b;
+  color: #ededea;
+}
+
+.btn-danger:hover {
+  filter: brightness(1.15);
+}
+
+.btn-icon {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+}
+
+.btn-icon img {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  filter: brightness(0) invert(1);
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  color: rgba(237, 237, 234, 0.7);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #ededea;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #00b2ff;
+}
+
+.file-input-container {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.file-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.file-input-label {
+  display: block;
+  padding: 10px 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ededea;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.file-input-label img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.file-input-label:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.file-name {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(237, 237, 234, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.custom-checkbox {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 18px;
+  width: 18px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+  background-color: #00b2ff;
+  border-color: #00b2ff;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.custom-checkbox .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Status Indicators */
+.status-indicator {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-normal {
+  background-color: rgba(30, 174, 152, 0.2);
+  color: #1eae98;
+  border: 1px solid rgba(30, 174, 152, 0.3);
+}
+
+.status-warning {
+  background-color: rgba(255, 211, 105, 0.2);
+  color: #ffd369;
+  border: 1px solid rgba(255, 211, 105, 0.3);
+}
+
+.status-error {
+  background-color: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* Status Display */
+.status-display {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 16px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.status-display pre {
+  font-family: 'Lato', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(237, 237, 234, 0.8);
+  white-space: pre-wrap;
+}
+
+/* Floating Window Styles */
+.floating-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(24, 31, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  width: 80%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.floating-window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.floating-window-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.floating-window-content {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(90vh - 60px);
+}
+
+/* Config Window Specific Styles */
+.config-section {
+  background-color: rgba(30, 39, 46, 0.6);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.config-section-title {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  color: rgba(237, 237, 234, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.subsection-title {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: rgba(237, 237, 234, 0.8);
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.satellite-system,
+.ground-station,
+.channel {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.system-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.system-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  margin: 0;
+}
+
+.remove-system {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.remove-system:hover {
+  opacity: 1;
+}
+
+.remove-system img {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(0.7);
+}
+
+/* Summary Section */
+.summary-container {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.summary-label {
+  font-size: 14px;
+  color: rgba(237, 237, 234, 0.7);
+}
+
+.summary-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ededea;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.action-buttons .btn {
+  width: 48%;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .control-panel {
+    width: calc(100% - 48px);
+    max-width: 320px;
+  }
+  
+  .btn {
+    padding: 12px 16px; /* Larger touch targets */
+  }
+  
+  .floating-window {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-row .form-group {
+    width: 100% !important;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons .btn {
+    width: 100%;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.pulse {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.ml-1 { margin-left: 8px; }
+
+.d-flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+/* Cesium Widget Overrides */
+.cesium-viewer-bottom {
+  display: none;
+}
+
+.cesium-viewer-toolbar {
+  top: 16px;
+  right: 16px;
+}
+
+.cesium-viewer-toolbar button {
+  background-color: rgba(24, 31, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ededea;
+}
+
+.cesium-viewer-toolbar button:hover {
+  background-color: rgba(30, 39, 46, 0.9);
+}
+
+.cesium-viewer-toolbar button:focus {
+  outline: none;
+  border-color: #00b2ff;
+}

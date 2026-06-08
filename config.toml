@@ -1,69 +1,213 @@
 network = '10.0.0.0/24'
+network_ext = '172.27.12.0/24'
+unicast_flooding = 0
 [Time]
-	TimeInterval = 0.5 #0.08333		#[min]
-	Contact_speed = 1
-	Non_contact_speed = 100
-	start_datetime = '2022-08-14 08:00:00'
-	end_datetime = '2022-08-14 10:10:00'
+	TimeInterval = 0.25		#[min]
+	Contact_speed = 25.0
+	Non_contact_speed = 200.0
+	start_datetime = '2026-06-08 08:00:00'
+	end_datetime = '2026-06-08 13:00:00'
 [SpaceSegment]
+	TLE = 'sample.tle'
 	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-1' 
 		group = 'LEO'
-		TLE = 'LEO.tle'
-		propagator = 'SGP4' 	#TwoBody or SGP4
-		Service = 'Relay' 	#Standard or Relay
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.101'
+		interface = 'eth0'
 		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'ubuntu20.04' 
-			OS = 'ubuntu' 	#ubuntu o alpine
-			username = 'ubuntu'
-			password = 'ubuntu'
-			interface = 'enp1s0'
+			name_VM = 'SATELLITE-1' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-2' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.102'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-2' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-3' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.103'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-3' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-4' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.104'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-4' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-5' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.105'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-5' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-6' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.106'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-6' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-7' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.107'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-7' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-8' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.108'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-8' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-9' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.109'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-9' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-10' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.110'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-10' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-11' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.111'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-11' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-12' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.112'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-12' 
 [GroundSegment]
 	[[GroundSegment.GroundSistem]]
-		name = 'i2cat'
+		name = 'Ibi_ES'
 		group = 'GS'
-		latitude = 41.38732849041236
-		longitude = 2.1118426322937003
-		height = 150
+		latitude = 38.5942
+		longitude = -0.5696
+		height = 500.0
+		OS = 'debian' #ubuntu o alpine
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.201'
+		interface = 'eth0'
 		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'alpine' #
-			OS = 'alpine' #ubuntu o alpine
-			username = 'alpine'
-			password = 'alpine'
-			interface = 'eth0'
+			name_VM = 'Ibi_ES'
 	[[GroundSegment.GroundSistem]]
-		name = 'Milan'
+		name = 'Foggia_IT'
 		group = 'GS'
-		latitude = 45.469692
-		longitude = 9.178557
-		height = 450
+		latitude = 41.4616
+		longitude = 15.5404
+		height = 75.0
+		OS = 'debian' #ubuntu o alpine
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		ip_ext = '172.27.12.202'
+		interface = 'eth0'
 		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'alpine' #
-			OS = 'alpine' #ubuntu o alpine
-			username = 'alpine'
-			password = 'alpine'
-			interface = 'eth0'
+			name_VM = 'Foggia_IT'
 [Channels]
-	[[Channels.Channel]]
-		Node1 = 'IntelSat'		 #Group name
-		Node2 = 'GS'
-		Min_elevation_angle = 0 	#[deg]
-		Threshold = 40e6		#[m]
-		Data_rate =  100		#[Mbit]
-		Packet_loss = 0		#[%]
-		Correlated_losses = 0		#[%] Emulate packet burst losses
-	[[Channels.Channel]]
-		Node1 = 'IntelSat' 		#Group name
-		Node2 = 'LEO'
-		Min_elevation_angle = 0 	#[deg]
-		Threshold = 40e6		#[m]
-		Data_rate =  100		#[Mbit]
-		Packet_loss = 0		#[%]
-		Correlated_losses = 0		#[%] Emulate packet burst losses
 	[[Channels.Channel]]
 		Node1 = 'LEO' #Group name
 		Node2 = 'GS'
-		Min_elevation_angle = 0 	#[deg]
-		Threshold = 2e6		#[m]
-		Data_rate =  10000		#[Mbit]
-		Packet_loss = 0		#[%]
-		Correlated_losses = 0		#[%] Emulate packet burst losses
+		Min_elevation_angle = 15.0		#[deg]
+		Threshold = 2000000000000.0			#[m]
+		Data_rate =  500			#[Mbit]
+		Packet_loss = 2.0			#[%]
+		Correlated_losses = 0.5		#[%] Emulate packet burst losses
+	[[Channels.Channel]]
+		Node1 = 'LEO' #Group name
+		Node2 = 'LEO'
+		Min_elevation_angle = 0.0		#[deg]
+		Threshold = 2000000000000.0			#[m]
+		Data_rate =  10000			#[Mbit]
+		Packet_loss = 0.5			#[%]
+		Correlated_losses = 0.0		#[%] Emulate packet burst losses
