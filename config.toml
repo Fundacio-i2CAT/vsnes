@@ -3,10 +3,10 @@ network_ext = '172.27.12.0/24'
 unicast_flooding = 0
 [Time]
 	TimeInterval = 0.25		#[min]
-	Contact_speed = 5.0
-	Non_contact_speed = 50.0
+	Contact_speed = 25.0
+	Non_contact_speed = 200.0
 	start_datetime = '2026-06-08 08:00:00'
-	end_datetime = '2026-06-08 13:00:00'
+	end_datetime = '2026-06-08 20:00:00'
 [SpaceSegment]
 	TLE = 'sample.tle'
 	[[SpaceSegment.SatelliteSistem]]
@@ -51,6 +51,860 @@ unicast_flooding = 0
 		interface = 'eth0'
 		[SpaceSegment.SatelliteSistem.clone_VM]
 			name_VM = 'SATELLITE-3' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-4' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.104'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-4' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-5' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.105'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-5' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-6' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.106'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-6' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-7' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.107'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-7' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-8' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.108'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-8' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-9' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.109'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-9' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-10' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.110'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-10' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-11' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.111'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-11' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-12' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.112'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-12' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-13' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.113'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-13' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-14' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.114'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-14' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-15' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.115'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-15' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-16' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.116'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-16' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-17' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.117'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-17' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-18' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.118'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-18' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-19' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.119'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-19' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-20' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.120'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-20' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-21' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.121'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-21' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-22' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.122'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-22' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-23' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.123'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-23' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-24' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.124'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-24' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-25' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.125'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-25' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-26' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.126'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-26' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-27' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.127'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-27' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-28' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.128'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-28' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-29' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.129'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-29' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-30' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.130'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-30' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-31' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.131'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-31' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-32' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.132'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-32' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-33' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.133'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-33' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-34' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.134'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-34' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-35' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.135'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-35' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-36' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.136'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-36' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-37' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.137'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-37' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-38' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.138'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-38' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-39' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.139'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-39' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-40' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.140'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-40' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-41' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.141'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-41' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-42' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.142'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-42' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-43' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.143'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-43' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-44' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.144'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-44' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-45' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.145'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-45' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-46' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.146'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-46' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-47' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.147'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-47' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-48' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.148'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-48' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-49' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.149'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-49' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-50' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.150'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-50' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-51' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.151'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-51' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-52' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.152'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-52' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-53' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.153'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-53' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-54' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.154'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-54' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-55' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.155'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-55' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-56' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.156'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-56' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-57' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.157'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-57' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-58' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.158'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-58' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-59' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.159'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-59' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-60' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.160'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-60' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-61' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.161'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-61' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-62' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.162'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-62' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-63' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.163'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-63' 
+	[[SpaceSegment.SatelliteSistem]]
+		propagator = 'SGP4'		#TwoBody or SGP4
+		Service = 'Standard'	#Standard or Relay
+		name = 'SATELLITE-64' 
+		group = 'LEO'
+		OS = 'debian'	#ubuntu o alpines
+		username = 'debian'
+		password = 'debian'
+		is_external_vm = 1
+		is_docker = 1
+		ip_ext = '172.27.12.164'
+		interface = 'eth0'
+		[SpaceSegment.SatelliteSistem.clone_VM]
+			name_VM = 'SATELLITE-64' 
 
 [GroundSegment]
 	[[GroundSegment.GroundSistem]]

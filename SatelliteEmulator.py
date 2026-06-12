@@ -151,7 +151,9 @@ def stream_output(proc, prefix):
             if any(skip in stripped for skip in [
                 'Detected change', 'Restarting with stat',
                 'Debugger PIN', 'Press CTRL+C to quit',
-                'development server'
+                'development server',
+                'GET /api/status', 'OPTIONS /api/status',   # GUI poll spam
+                'GET /ScenarioCZML.czml', 'GET /satsPosition'
             ]):
                 continue
 

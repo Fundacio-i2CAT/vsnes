@@ -10,6 +10,9 @@ from flask_cors import CORS
 
 from Class.log_config import setup_logging
 setup_logging()
+# Per-request access lines (GET /api/status every ~300ms from the GUI) drown
+# the console and snes.log; keep only warnings/errors from werkzeug.
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 
 app = Flask(__name__)

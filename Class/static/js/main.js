@@ -607,6 +607,26 @@ async function getStatus(silent = false) {
     }
 }
 
+/* ----------  Clock sync helper ---------- */
+// The backend only knows time at tick boundaries (simulation_time.txt /
+// CZML clock are tick-quantized), while the Cesium clock animates smoothly
+// between ticks at the multiplier. Snapping the viewer clock to the backend
+// value on every poll makes the globe jump back to the last mark each
+// second. Instead, let the viewer free-run and hard-sync only when it
+// genuinely diverges (stalled tab, scenario restart, speed change).
+function syncClockTolerant(targetTime, multiplier) {
+    if (multiplier) {
+        viewer.clock.multiplier = multiplier;
+    }
+    // drift > 0: viewer ahead of backend (normal, up to ~2 ticks + poll lag)
+    const drift = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime, targetTime);
+    // Allow ~5 real-seconds worth of sim time of forward drift before snapping
+    const tolerance = Math.max(60, 5 * (viewer.clock.multiplier || 60));
+    if (drift < -1 || drift > tolerance) {
+        viewer.clock.currentTime = Cesium.JulianDate.clone(targetTime);
+    }
+}
+
 /* ----------  CZML reload helper ---------- */
 function Reload() {
     viewer.dataSources.remove(czml);
@@ -615,10 +635,9 @@ function Reload() {
         .then(ds => {
             czml = ds;
             viewer.dataSources.add(czml);
-            // Sync clock from CZML document packet
+            // Sync clock from CZML document packet (tolerant: no snap-back)
             if (ds.clock) {
-                viewer.clock.currentTime = Cesium.JulianDate.clone(ds.clock.currentTime);
-                viewer.clock.multiplier = ds.clock.multiplier || 60;
+                syncClockTolerant(ds.clock.currentTime, ds.clock.multiplier || 60);
             }
             // Only animate if simulation is actually running
             viewer.clock.shouldAnimate = simulationRunning;
@@ -692,8 +711,9 @@ function startTimeSync() {
             if (status.system_status === 'RUNNING_SIMULATION' && status.simulation_time) {
                 const simTime = Cesium.JulianDate.fromIso8601(status.simulation_time);
 
-                // Override Cesium clock to mathematically match Python backend
-                viewer.clock.currentTime = simTime;
+                // Tolerant sync: only snap if the viewer clock truly diverged,
+                // otherwise let it animate smoothly between backend ticks
+                syncClockTolerant(simTime, null);
 
                 // Update UI text element
                 const simDisplay = document.getElementById('simulationTimeDisplay');

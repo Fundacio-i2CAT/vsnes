@@ -242,9 +242,13 @@ class scenario:
 			w_shutdown.write('#!/bin/sh\n')
 
 			# ── Docker IFB mode ──────────────────────────────────────────────────
+			# All ip/tc commands go into batch files executed by a SINGLE ip/tc
+			# process (`-batch`).  At N nodes the setup is O(N²) commands —
+			# spawning sudo+tc per line takes minutes at 65 nodes; batch mode
+			# runs the same setup in seconds.
 			if docker_vm_nodes:
 				n_ifbs = len(docker_vm_nodes)
-				w_runtime.write(f'sudo modprobe ifb numifbs={n_ifbs} 2>/dev/null || true\n')
+				ip_up, tc_up, ip_down, tc_down = [], [], [], []
 
 				# Phase 1: create IFB + redirect each container's outgoing traffic into it
 				for n, node in docker_vm_nodes:
@@ -255,16 +259,16 @@ class scenario:
 					ifb = f'ifb{n}'
 					node._ifb_iface = ifb  # cache so Channel.update() uses the right interface
 
-					w_runtime.write(f'sudo ip link add {ifb} type ifb 2>/dev/null || true\n')
-					w_runtime.write(f'sudo ip link set dev {ifb} up\n')
+					ip_up.append(f'link add {ifb} type ifb')
+					ip_up.append(f'link set dev {ifb} up')
 					# Redirect ALL ingress from the container's host-side veth to the IFB
-					w_runtime.write(f'sudo tc qdisc add dev {veth} ingress handle ffff: 2>/dev/null || sudo tc qdisc replace dev {veth} ingress handle ffff:\n')
-					w_runtime.write(f'sudo tc filter add dev {veth} parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev {ifb}\n')
+					tc_up.append(f'qdisc add dev {veth} ingress handle ffff:')
+					tc_up.append(f'filter add dev {veth} parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev {ifb}')
 					# HTB root on IFB — per-destination classes go in Phase 2
-					w_runtime.write(f'sudo tc qdisc add dev {ifb} root handle 1: htb\n')
+					tc_up.append(f'qdisc add dev {ifb} root handle 1: htb')
 
-					w_shutdown.write(f'sudo tc qdisc del dev {veth} ingress 2>/dev/null || true\n')
-					w_shutdown.write(f'sudo ip link del {ifb} 2>/dev/null || true\n')
+					tc_down.append(f'qdisc del dev {veth} ingress')
+					ip_down.append(f'link del {ifb}')
 
 				# Phase 2: HTB classes + netem + u32 dst-IP filters per (source, dest) pair
 				for n, node in docker_vm_nodes:
@@ -280,22 +284,37 @@ class scenario:
 							rate = float(Ch['Data_rate'])
 						except (TypeError, KeyError, ValueError):
 							rate = 100.0
-						w_runtime.write(f'sudo tc class add dev {ifb} parent 1: classid 1:{j} htb rate {rate}mbit\n')
+						tc_up.append(f'class add dev {ifb} parent 1: classid 1:{j} htb rate {rate}mbit')
 						if delay == -2 or delay == -1:
-							w_runtime.write(f'sudo tc qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem loss 100%\n')
+							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem loss 100%')
 						else:
 							try:
 								losses = f"{Ch['Packet_loss']}%"
 								burst  = f"{Ch['Correlated_losses']}%"
 							except (TypeError, KeyError):
 								losses, burst = '0%', '0%'
-							w_runtime.write(f'sudo tc qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem delay {delay:.3f}ms loss {losses} {burst}\n')
+							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem delay {delay:.3f}ms loss {losses} {burst}')
 						# u32 filters by destination IP (no iptables MARK needed):
 						# both the emulated address (10.0.0.j, shown in the GUI) and
 						# the management address map to the same shaped class.
 						emu_ip = str(getattr(dest_node, '_ip', '') or '')
 						for dip in dict.fromkeys(filter(None, (emu_ip, dest_ip))):
-							w_runtime.write(f'sudo tc filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}\n')
+							tc_up.append(f'filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}')
+
+				with open('ip_setup.batch', 'w') as f:
+					f.write('\n'.join(ip_up) + '\n')
+				with open('tc_setup.batch', 'w') as f:
+					f.write('\n'.join(tc_up) + '\n')
+				with open('tc_teardown.batch', 'w') as f:
+					f.write('\n'.join(tc_down) + '\n')
+				with open('ip_teardown.batch', 'w') as f:
+					f.write('\n'.join(ip_down) + '\n')
+
+				w_runtime.write(f'sudo modprobe ifb numifbs={n_ifbs} 2>/dev/null || true\n')
+				w_runtime.write('sudo ip -force -batch ip_setup.batch\n')
+				w_runtime.write('sudo tc -force -batch tc_setup.batch\n')
+				w_shutdown.write('sudo tc -force -batch tc_teardown.batch 2>/dev/null\n')
+				w_shutdown.write('sudo ip -force -batch ip_teardown.batch 2>/dev/null\n')
 
 			# ── Classic VM mode (VLAN subinterfaces + iptables MARK) ─────────────
 			if classic_vm_nodes:
