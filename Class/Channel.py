@@ -117,11 +117,18 @@ class channel:
 		node_cache = []
 		for node in node_list:
 			is_sat = isinstance(node, Satellite)
+			# Docker containers use a pre-named IFB device (ifb<N>) set by
+			# write_bash(); _get_Host_interface() returns it directly.  Classic
+			# VMs return a base name (e.g. 'eth0') that Channel.update() extends
+			# to 'eth0.N'.  The is_docker flag tells update() which path to use.
+			iface_base = node._get_Host_interface()
+			is_docker  = getattr(node, '_ifb_iface', None) is not None
 			entry = {
 				'obj': node,
 				'name': node.name,
 				'is_sat': is_sat,
-				'interface_base': node._get_Host_interface(),
+				'interface_base': iface_base,
+				'is_docker': is_docker,
 				'eci': None,
 				'ecef': None,
 				'llh': None,
@@ -159,7 +166,11 @@ class channel:
 
 				# Traffic Control Logic: only emit a command when the value changed
 				if EMU and old_matrix[n][j] != delay and n != j:
-					interface = f"{node_n_data['interface_base']}.{n+1}"
+					if node_n_data['is_docker']:
+						# IFB name already encodes the node index (e.g. ifb2)
+						interface = node_n_data['interface_base']
+					else:
+						interface = f"{node_n_data['interface_base']}.{n+1}"
 					class_id = f"1:{j+1}"
 					handle_id = f"1{j+1}:"
 
@@ -183,11 +194,13 @@ class channel:
 						if rate is not None:
 							applied = self._applied_rates.get((n, j))
 							if applied is None:
-								# First tick: assume write_bash applied it at startup
 								self._applied_rates[(n, j)] = rate
 							elif applied != rate:
-								interface = f"{node_n_data['interface_base']}.{n+1}"
-								script_lines.append(f'class change dev {interface} parent 1: classid 1:{j+1} htb rate {rate:f}mbit')
+								if node_n_data['is_docker']:
+									iface_dr = node_n_data['interface_base']
+								else:
+									iface_dr = f"{node_n_data['interface_base']}.{n+1}"
+								script_lines.append(f'class change dev {iface_dr} parent 1: classid 1:{j+1} htb rate {rate:f}mbit')
 								self._applied_rates[(n, j)] = rate
 
 				self._delay_matrix[n][j] = delay

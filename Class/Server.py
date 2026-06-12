@@ -58,4 +58,4 @@ def czmlData():
 EMU_bool = sys.argv[1]
 timer_ms = sys.argv[2]
 
-app.run(debug=True,host='0.0.0.0', port=5500)
+app.run(debug=True,host='0.0.0.0', port=5580)

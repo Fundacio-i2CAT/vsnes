@@ -32,6 +32,8 @@ Key endpoints:
 | `POST` | `/api/stop-all-vms` | Stop all VMs |
 | `DELETE` | `/api/delete-vm/<name>` | Delete a specific VM |
 | `DELETE` | `/api/delete-all-vms` | Delete all VMs |
+| `POST` | `/api/compose/up` | Start the Docker node containers (`docker compose up -d`); optional JSON body `{"services": ["satellite-1", ...]}` to start a subset |
+| `POST` | `/api/compose/down` | Stop and remove the Docker node containers (`docker compose down`) |
 | `POST` | `/api/simulation/start` | Start full emulation and visualization |
 | `POST` | `/api/visualization/start` | Start visualization only |
 | `POST` | `/api/simulation/stop` | Stop the running simulation |
@@ -62,6 +64,8 @@ Available tools:
 | `start_simulation` | Start emulation and visualization |
 | `stop_simulation` | Stop and reset the emulator |
 | `get_emulator_status` | Get full system status |
+| `compose_up` | Start the Docker node containers (optionally a list of service names) |
+| `compose_down` | Stop and remove the Docker node containers |
 
 **VM Management** (direct Libvirt/SSH)
 
@@ -244,7 +248,7 @@ from pygeoif.factories import shape as asShape
 
 ```bash
 python SatelliteEmulator.py              # API only
-python SatelliteEmulator.py --web        # API + Cesium web server (port 5000)
+python SatelliteEmulator.py --web        # API + Cesium web server (port 5580)
 python SatelliteEmulator.py --ntp        # API + NTP server (port 12345)
 python SatelliteEmulator.py --mcp        # API + MCP server (port 8560)
 python SatelliteEmulator.py --all        # API + Web + NTP + MCP
@@ -256,7 +260,7 @@ Services started and their addresses:
 | Service | Address | Flag |
 |---------|---------|------|
 | REST API | `http://localhost:5050` | always |
-| Cesium GUI | `http://localhost:5000` | `--web` |
+| Cesium GUI | `http://localhost:5580` | `--web` |
 | NTP server | port `12345` | `--ntp` |
 | MCP server | `http://localhost:8560` | `--mcp` |
 
@@ -268,6 +272,8 @@ Available interactive commands:
 | `load_scenario` | `load` | Load `config.toml` and initialize the scenario |
 | `scenario` | | Display loaded nodes and their types |
 | `start_vms` | `vm` | Create or start containers/VMs for all nodes |
+| `compose_up [services...]` | `compose up` | Start the Docker node containers via the API (`docker compose up -d`); optionally name specific services, e.g. `compose_up satellite-1 ibi_es` |
+| `compose_down` | `compose down` | Stop and remove the Docker node containers via the API (`docker compose down`) |
 | `write_czml` | | Generate `ScenarioCZML.czml` for Cesium |
 | `run_all` | `run` | Run full emulation and Cesium visualization |
 | `run_emulator` | `emu`, `emulator`, `run_emu` | Run emulation only (no Cesium) |
@@ -284,7 +290,7 @@ python SatelliteEmulator.py --web
 ```
 
 - REST API: `http://localhost:5050`
-- Cesium GUI: `http://localhost:5000`
+- Cesium GUI: `http://localhost:5580`
 - API docs: `http://localhost:5050/api/help`
 
 Typical workflow:
@@ -293,18 +299,27 @@ Typical workflow:
 curl -F "file=@config.toml" http://localhost:5050/api/upload-config
 curl -F "file=@sample.tle"  http://localhost:5050/api/upload-tle
 
-# 2. Load and initialize
+# 2. Start the Docker node containers (all, or a subset of services)
+curl -X POST http://localhost:5050/api/compose/up
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"services": ["satellite-1", "satellite-2", "satellite-3", "ibi_es"]}' \
+     http://localhost:5050/api/compose/up
+
+# 3. Load and initialize
 curl -X POST http://localhost:5050/api/load-config
 curl -X POST http://localhost:5050/api/init-scenario
 
-# 3. Start simulation
+# 4. Start simulation
 curl -X POST http://localhost:5050/api/simulation/start
 
-# 4. Monitor
+# 5. Monitor
 curl http://localhost:5050/api/status
 
-# 5. Stop
+# 6. Stop
 curl -X POST http://localhost:5050/api/simulation/stop
+
+# 7. Tear down the containers
+curl -X POST http://localhost:5050/api/compose/down
 ```
 
 ### MCP Mode (AI Integration)

@@ -219,94 +219,149 @@ class scenario:
 		# restart the parameters of simulatión, put date_time marker equal to 0 and update de scenario
 		self._time_parameters.reset()
 		self._channel.update(self._node_list,self._nNodes,self._time_parameters._marker,False)
-	def write_bash (self):
-		# write two bash files, one for define the scenario and  other to delete the configuration of the first file.
+	def write_bash(self):
+		"""Write runtime_bash.sh and shutdown_bash.sh for channel emulation setup.
+
+		Docker-container nodes (is_external_vm=1 + docker inspect succeeds) use an
+		IFB-based approach: ingress traffic on each container's host-side veth is
+		redirected to an ifb<N> device where HTB + netem with u32 dst-IP filters
+		shape it.  No VLAN subinterfaces or iptables MARK are needed.
+
+		Internal/real external VMs use the original VLAN + iptables MARK path.
+		"""
 		host_interface = self._host_interface
+
+		# Partition nodes into Docker containers vs traditional VMs
+		docker_vm_nodes  = [(n, self._node_list[n-1]) for n in range(1, self._nNodes+1)
+		                    if self._node_list[n-1].check_VM() and self._node_list[n-1]._is_docker_container()]
+		classic_vm_nodes = [(n, self._node_list[n-1]) for n in range(1, self._nNodes+1)
+		                    if self._node_list[n-1].check_VM() and not self._node_list[n-1]._is_docker_container()]
+
 		with open("runtime_bash.sh", "w") as w_runtime, open("shutdown_bash.sh", "w") as w_shutdown:
 			w_runtime.write('#!/bin/sh\n')
 			w_shutdown.write('#!/bin/sh\n')
 
-			w_runtime.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
-			w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
-			w_runtime.write('sudo brctl stp brSATEMU off\n')
-			if self._unicast_flooding:
-				w_runtime.write('sudo brctl setageing brSATEMU 0\n')
-			# Commands to enable external domains/VMs in Relay mode
-			w_runtime.write('sudo sysctl -w net.ipv4.ip_forward=1\n')
-			w_runtime.write('sudo iptables -I FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, self._network_ext))
-			w_runtime.write('sudo ip link add vsnes_ext type vxlan id 10 dev %s group 239.1.1.1 dstport 4789\n'%(host_interface))
-			w_runtime.write('sudo ip link set vsnes_ext master virbr0\n')
-			w_runtime.write('sudo ip link set vsnes_ext up\n')
+			# ── Docker IFB mode ──────────────────────────────────────────────────
+			if docker_vm_nodes:
+				n_ifbs = len(docker_vm_nodes)
+				w_runtime.write(f'sudo modprobe ifb numifbs={n_ifbs} 2>/dev/null || true\n')
 
-			for n in range(1,self._nNodes+1):
-				if self._node_list[n-1].check_VM():
-					#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
-					interface = self._node_list[n-1]._get_Host_interface()
-					if self._node_list[n-1].is_external_vm:
-						w_runtime.write('sudo -S ip link add %s type vxlan id %d00 remote %s dev %s dstport 4789;'%(interface,n,self._node_list[n-1].ip_ext,host_interface))
-						w_runtime.write('sudo ip link set dev %s up\n'%(interface))
-					# Define an interface in a VLAN
-					w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-					#Set up
-					w_runtime.write('sudo ip link set dev %s.%d up\n'%(interface,n))
-					#Add the interface to the bridge
-					w_runtime.write('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
-					#Defines a tc qdisc root
-					w_runtime.write('sudo tc qdisc add dev %s.%d root handle 1: htb\n'%(interface,n))
-					w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
-					#Delete the root of tc qdisc
-					w_shutdown.write('sudo tc qdisc del dev %s.%d root handle 1: htb\n'%(interface,n))
-					# Delete the interface associated with the VLAN
-					w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-					w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
-					if self._node_list[n-1].service in ('relay', 'batman', 'RELAY'):
-						nodeNumber2 = self._nNodes + n
-						w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2))
-						w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2))
-						w_runtime.write('sudo ip link set dev %s.%d up\n' % (interface,nodeNumber2))
-						w_runtime.write('sudo brctl addif brSATEMU %s.%d\n' % (interface,nodeNumber2))
-						w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
-						w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
-						# Add the conditions of the channel
-						w_runtime.write('sudo tc qdisc add dev %s.%d root netem loss 100%%\n'%(interface,nodeNumber2))
-			#Creates one classid per node in every Vlan interface and define channel properties
-			for n in range(1,self._nNodes+1):
-				if self._node_list[n-1].check_VM():
-					interface = self._node_list[n-1]._get_Host_interface()
-					for j in range(1,self._nNodes+1):
-						#Obtain the delay between the nodes n-1 and j-1
-						delay = self._channel.get_channel(n-1,j-1)
-						if delay == -2:
-							#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
-							w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
-							# Add the conditions of the channel
-							w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
+				# Phase 1: create IFB + redirect each container's outgoing traffic into it
+				for n, node in docker_vm_nodes:
+					veth = node.get_docker_veth()
+					if not veth:
+						logging.error(f'write_bash: could not find veth for {node.name} — skipping tc setup')
+						continue
+					ifb = f'ifb{n}'
+					node._ifb_iface = ifb  # cache so Channel.update() uses the right interface
+
+					w_runtime.write(f'sudo ip link add {ifb} type ifb 2>/dev/null || true\n')
+					w_runtime.write(f'sudo ip link set dev {ifb} up\n')
+					# Redirect ALL ingress from the container's host-side veth to the IFB
+					w_runtime.write(f'sudo tc qdisc add dev {veth} ingress handle ffff: 2>/dev/null || sudo tc qdisc replace dev {veth} ingress handle ffff:\n')
+					w_runtime.write(f'sudo tc filter add dev {veth} parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev {ifb}\n')
+					# HTB root on IFB — per-destination classes go in Phase 2
+					w_runtime.write(f'sudo tc qdisc add dev {ifb} root handle 1: htb\n')
+
+					w_shutdown.write(f'sudo tc qdisc del dev {veth} ingress 2>/dev/null || true\n')
+					w_shutdown.write(f'sudo ip link del {ifb} 2>/dev/null || true\n')
+
+				# Phase 2: HTB classes + netem + u32 dst-IP filters per (source, dest) pair
+				for n, node in docker_vm_nodes:
+					if not getattr(node, '_ifb_iface', None):
+						continue
+					ifb = node._ifb_iface
+					for j in range(1, self._nNodes+1):
+						dest_node = self._node_list[j-1]
+						dest_ip   = getattr(dest_node, 'ip_ext', None)
+						delay     = self._channel.get_channel(n-1, j-1)
+						Ch        = self._channel._Get_Channel_Definition(node, dest_node)
+						try:
+							rate = float(Ch['Data_rate'])
+						except (TypeError, KeyError, ValueError):
+							rate = 100.0
+						w_runtime.write(f'sudo tc class add dev {ifb} parent 1: classid 1:{j} htb rate {rate}mbit\n')
+						if delay == -2 or delay == -1:
+							w_runtime.write(f'sudo tc qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem loss 100%\n')
 						else:
-							Channel = self._channel._Get_Channel_Definition(self._node_list[n-1],self._node_list[j-1])
-							#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
 							try:
-								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate %fmbit\n'%(interface,n,j,float(Channel['Data_rate'])))
-							except (KeyError, TypeError, ValueError):
-								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
-							# Add the conditions of the channel
-							if delay == -1:
-								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
-							else:
-								Losses = str(Channel['Packet_loss'])+'%'
-								Correlated_losses = str(Channel['Correlated_losses'])+'%'
-								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem delay %fms loss %s %s\n'%(interface,n,j,j,delay,Losses,Correlated_losses))
-						# Define filters according to the source ip
-						w_runtime.write('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n'%(interface,n,j,j))
+								losses = f"{Ch['Packet_loss']}%"
+								burst  = f"{Ch['Correlated_losses']}%"
+							except (TypeError, KeyError):
+								losses, burst = '0%', '0%'
+							w_runtime.write(f'sudo tc qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem delay {delay:.3f}ms loss {losses} {burst}\n')
+						# u32 filters by destination IP (no iptables MARK needed):
+						# both the emulated address (10.0.0.j, shown in the GUI) and
+						# the management address map to the same shaped class.
+						emu_ip = str(getattr(dest_node, '_ip', '') or '')
+						for dip in dict.fromkeys(filter(None, (emu_ip, dest_ip))):
+							w_runtime.write(f'sudo tc filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}\n')
 
-					if self._node_list[n-1].is_external_vm:
-						w_shutdown.write(f"sshpass -p '{self._node_list[n-1]._password}' ssh -o StrictHostKeyChecking=no {self._node_list[n-1]._username}@{self._node_list[n-1].ip_ext} 'sudo -S ip link del {interface}'\n")
-			# Tear down global interfaces after all per-node cleanup
-			w_shutdown.write('sudo ip link set vsnes_ext down\n')
-			w_shutdown.write('sudo ip link del vsnes_ext\n')
-			w_shutdown.write('sudo iptables -D FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, self._network_ext))
-			w_shutdown.write('sudo ip link set dev brSATEMU down\n')
-			w_shutdown.write('sudo brctl delbr brSATEMU\n')
-		# Make the files executable
+			# ── Classic VM mode (VLAN subinterfaces + iptables MARK) ─────────────
+			if classic_vm_nodes:
+				w_runtime.write('sudo ip link set dev brSATEMU down 2>/dev/null; sudo brctl delbr brSATEMU 2>/dev/null || true\n')
+				w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
+				w_runtime.write('sudo brctl stp brSATEMU off\n')
+				if self._unicast_flooding:
+					w_runtime.write('sudo brctl setageing brSATEMU 0\n')
+				w_runtime.write('sudo sysctl -w net.ipv4.ip_forward=1\n')
+				w_runtime.write('sudo iptables -I FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n' % (host_interface, self._network_ext))
+				w_runtime.write('sudo ip link add vsnes_ext type vxlan id 10 dev %s group 239.1.1.1 dstport 4789\n' % host_interface)
+				w_runtime.write('sudo ip link set vsnes_ext master virbr0\n')
+				w_runtime.write('sudo ip link set vsnes_ext up\n')
+
+				for n, node in classic_vm_nodes:
+					interface = node._get_Host_interface()
+					if node.is_external_vm:
+						w_runtime.write('sudo -S ip link add %s type vxlan id %d00 remote %s dev %s dstport 4789;' % (interface, n, node.ip_ext, host_interface))
+						w_runtime.write('sudo ip link set dev %s up\n' % interface)
+					w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n' % (interface, interface, n, n))
+					w_runtime.write('sudo ip link set dev %s.%d up\n' % (interface, n))
+					w_runtime.write('sudo brctl addif brSATEMU %s.%d\n' % (interface, n))
+					w_runtime.write('sudo tc qdisc add dev %s.%d root handle 1: htb\n' % (interface, n))
+					w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n' % (interface, n, n))
+					w_shutdown.write('sudo tc qdisc del dev %s.%d root handle 1: htb\n' % (interface, n))
+					w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n' % (interface, interface, n, n))
+					w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n' % (interface, n, n))
+					if node.service in ('relay', 'batman', 'RELAY'):
+						nn2 = self._nNodes + n
+						w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n' % (interface, interface, nn2, nn2))
+						w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n' % (interface, interface, nn2, nn2))
+						w_runtime.write('sudo ip link set dev %s.%d up\n' % (interface, nn2))
+						w_runtime.write('sudo brctl addif brSATEMU %s.%d\n' % (interface, nn2))
+						w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n' % (interface, nn2, n))
+						w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n' % (interface, nn2, n))
+						w_runtime.write('sudo tc qdisc add dev %s.%d root netem loss 100%%\n' % (interface, nn2))
+
+				for n, node in classic_vm_nodes:
+					interface = node._get_Host_interface()
+					for j in range(1, self._nNodes+1):
+						delay = self._channel.get_channel(n-1, j-1)
+						if delay == -2:
+							w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n' % (interface, n, j))
+							w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n' % (interface, n, j, j))
+						else:
+							Ch = self._channel._Get_Channel_Definition(self._node_list[n-1], self._node_list[j-1])
+							try:
+								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate %fmbit\n' % (interface, n, j, float(Ch['Data_rate'])))
+							except (KeyError, TypeError, ValueError):
+								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n' % (interface, n, j))
+							if delay == -1:
+								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n' % (interface, n, j, j))
+							else:
+								Losses = str(Ch['Packet_loss']) + '%'
+								Corr   = str(Ch['Correlated_losses']) + '%'
+								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem delay %fms loss %s %s\n' % (interface, n, j, j, delay, Losses, Corr))
+						w_runtime.write('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n' % (interface, n, j, j))
+					if node.is_external_vm:
+						w_shutdown.write(f"sshpass -p '{node._password}' ssh -o StrictHostKeyChecking=no {node._username}@{node.ip_ext} 'sudo -S ip link del {interface}'\n")
+
+				w_shutdown.write('sudo ip link set vsnes_ext down\n')
+				w_shutdown.write('sudo ip link del vsnes_ext\n')
+				w_shutdown.write('sudo iptables -D FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n' % (host_interface, self._network_ext))
+				w_shutdown.write('sudo ip link set dev brSATEMU down\n')
+				w_shutdown.write('sudo brctl delbr brSATEMU\n')
+
 		subprocess.run(['chmod', '+x', 'runtime_bash.sh'])
 		subprocess.run(['chmod', '+x', 'shutdown_bash.sh'])
 	def get_speed(self):
@@ -439,12 +494,20 @@ class scenario:
 		packet1 = czml.CZMLPacket(id='document',name='Satellite Network Emulator',version=version,clock=clock)
 		packet1.availability = interval
 		self.czml_doc.packets[0] = packet1
+		# Transient OSErrors (e.g. Windows-side file locks on /mnt/c) must not
+		# kill the simulation thread — both files are rewritten next tick anyway.
 		filename = "Class/templates/ScenarioCZML.czml"
 		tmpname = filename + '.tmp'
-		self.czml_doc.write(tmpname)
-		os.replace(tmpname, filename)
-		with open("simulation_time.txt", "w") as f:
-			f.write(currentTime)
+		try:
+			self.czml_doc.write(tmpname)
+			os.replace(tmpname, filename)
+		except OSError as e:
+			logging.warning(f"Skipping CZML clock write this tick: {e}")
+		try:
+			with open("simulation_time.txt", "w") as f:
+				f.write(currentTime)
+		except OSError as e:
+			logging.warning(f"Skipping simulation_time.txt write this tick: {e}")
 	
 	
 	def check_VMs(self):

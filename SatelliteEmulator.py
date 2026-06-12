@@ -300,6 +300,30 @@ def api_upload(file_type, path=None):
 
 
 # ---------------------------------------------------------------------------
+# Docker compose helper
+# ---------------------------------------------------------------------------
+
+def docker_compose(action, services=None):
+    """Start/stop the node containers through the API server (POST /api/compose/*)."""
+    endpoint = "/api/compose/up" if action == "up" else "/api/compose/down"
+    payload = {"services": services} if (action == "up" and services) else None
+    print(f"  Requesting docker compose {action} via API...")
+    # 620s: the server runs compose with a 600s limit (first up may build the image)
+    result, ok = api_call("POST", endpoint, json_data=payload, timeout=620)
+    if result:
+        for line in result.get('output', []):
+            print(f"  {line}")
+    if not ok:
+        return False
+    if result.get('containers'):
+        print("  Containers:")
+        for line in result['containers']:
+            print(f"    {line}")
+    print(f"  ✓ {result.get('message', f'docker compose {action} completed')}")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Scenario loader helper
 # ---------------------------------------------------------------------------
 
@@ -366,7 +390,7 @@ def main():
         proc = start_process("web", f"{PYTHON} Class/Server.py True 500.0".split())
         if proc:
             start_streamer(proc, "WEB")
-            print(f"  ✓ Web server starting → http://localhost:5000")
+            print(f"  ✓ Web server starting → http://localhost:5580")
 
     if start_ntp:
         proc = start_process("ntp", f"{PYTHON} ntpserver.py --port 12345".split())
@@ -392,7 +416,7 @@ def main():
     print(f"\n  ┌──────────────────────────────────────────────┐")
     print(f"  │  API:  http://localhost:5050                  │")
     if start_web:
-        print(f"  │  GUI:  http://localhost:5000                  │")
+        print(f"  │  GUI:  http://localhost:5580                  │")
     if start_ntp:
         print(f"  │  NTP:  port 12345                             │")
     if start_mcp:
@@ -412,6 +436,8 @@ def main():
             print("- load_scenario: load a configuration file and initialize the scenario")
             print("- scenario: show the loaded nodes and their type")
             print("- start_vms: create or start the VMs for every node")
+            print("- compose_up [services...]: start the Docker node containers (docker compose up -d)")
+            print("- compose_down: stop and remove the Docker node containers (docker compose down)")
             print("- delete_vm: delete a specific VM")
             print("- write_czml: write ScenarioCZML.czml data for Cesium")
             print("- run_all: run the emulation and Cesium")
@@ -439,6 +465,14 @@ def main():
             result, ok = api_call("POST", "/api/start-vms", timeout=120)
             if ok:
                 print(f"  ✓ {result.get('message')}")
+
+        elif inp.startswith('compose_up') or inp.startswith('compose up'):
+            # optional service names after the command, e.g. "compose_up satellite-1 ibi_es"
+            services = inp.replace('compose_up', '', 1).replace('compose up', '', 1).split()
+            docker_compose("up", services)
+
+        elif inp in ('compose_down', 'compose down'):
+            docker_compose("down")
 
         elif inp in ('run', 'run_all', 'run all'):
             if not SCENARIO_LOADED:

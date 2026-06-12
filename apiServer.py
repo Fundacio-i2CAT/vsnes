@@ -145,6 +145,42 @@ def deleteAllVMs(scenario):
         logging.error(f"Error deleting all VMs: {e}")
         return False
 
+def run_docker_compose(action, services=None):
+    """Run docker compose up -d / down for the node containers.
+    Returns (result_dict, http_status)."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    compose_file = os.path.join(base_dir, 'docker-compose.yml')
+    if not os.path.exists(compose_file):
+        return {'error': f'docker-compose.yml not found in {base_dir}'}, 500
+
+    if action == 'up':
+        cmd = ['docker', 'compose', 'up', '-d'] + list(services or [])
+    else:
+        cmd = ['docker', 'compose', 'down']
+
+    logging.info(f"Running: {' '.join(cmd)}")
+    try:
+        # 600s: first `up` may need to build the node image (k3s download etc.)
+        proc = subprocess.run(cmd, cwd=base_dir, capture_output=True, text=True, timeout=600)
+    except FileNotFoundError:
+        return {'error': 'docker not found — is Docker installed and in PATH?'}, 500
+    except subprocess.TimeoutExpired:
+        return {'error': f'docker compose {action} timed out after 600s'}, 504
+
+    output = (proc.stdout + proc.stderr).strip()
+    if proc.returncode != 0:
+        logging.error(f"docker compose {action} failed: {output}")
+        return {'error': f'docker compose {action} failed (exit {proc.returncode})',
+                'output': output.splitlines()}, 500
+
+    result = {'message': f'docker compose {action} completed successfully',
+              'output': output.splitlines()}
+    if action == 'up':
+        ps = subprocess.run(['docker', 'compose', 'ps', '--format', '{{.Name}}\t{{.Status}}'],
+                            cwd=base_dir, capture_output=True, text=True)
+        result['containers'] = ps.stdout.strip().splitlines() if ps.stdout.strip() else []
+    return result, 200
+
 
 # API Routes
 @app.route('/api/health', methods=['GET'])
@@ -329,6 +365,24 @@ def stop_all_vms():
         return jsonify({'error': 'Failed to stop VMs'}), 500
 
 
+@app.route('/api/compose/up', methods=['POST'])
+def compose_up():
+    """Start the Docker node containers (docker compose up -d).
+    Optional JSON body: {"services": ["satellite-1", "ibi_es", ...]}"""
+    data = request.get_json(silent=True) or {}
+    services = data.get('services') or []
+    if not isinstance(services, list) or not all(isinstance(s, str) for s in services):
+        return jsonify({'error': "'services' must be a list of service names"}), 400
+    result, code = run_docker_compose('up', services)
+    return jsonify(result), code
+
+@app.route('/api/compose/down', methods=['POST'])
+def compose_down():
+    """Stop and remove the Docker node containers (docker compose down)."""
+    result, code = run_docker_compose('down')
+    return jsonify(result), code
+
+
 @app.route('/api/visualization/start', methods=['POST'])
 def start_visualization():
     """Start Cesium visualization only"""
@@ -483,6 +537,8 @@ def api_help():
             'DELETE /api/delete-all-vms': 'Delete all VMs',
             'POST /api/stop-vm/<name>': 'Stop specific VM',
             'POST /api/stop-all-vms': 'Stop all VMs',
+            'POST /api/compose/up': 'Start Docker node containers (optional JSON {"services": [...]})',
+            'POST /api/compose/down': 'Stop and remove Docker node containers',
             'POST /api/simulation/start': 'Start emulation and visualization',
             'POST /api/visualization/start': 'Start visualization only',
             'GET /api/status': 'Get current system status',

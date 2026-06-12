@@ -206,13 +206,15 @@ vm_manager = VMManager()
 # PART 1: SATELLITE EMULATOR TOOLS (HTTP API)
 # ============================================================================
 
-async def call_api(method: str, endpoint: str, json_data: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Helper: Make an HTTP request to the emulator API"""
+async def call_api(method: str, endpoint: str, json_data: Dict[str, Any] = None,
+                   timeout: float = None) -> Dict[str, Any]:
+    """Helper: Make an HTTP request to the emulator API.
+    timeout overrides API_TIMEOUT for long operations (e.g. docker compose builds)."""
     url = f"{API_BASE_URL}{endpoint}"
     headers = {"Content-Type": "application/json"}
-    
+
     try:
-        async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=timeout or API_TIMEOUT) as client:
             if method.upper() == "GET":
                 response = await client.get(url, headers=headers)
             elif method.upper() == "POST":
@@ -252,6 +254,27 @@ async def stop_simulation() -> Dict[str, Any]:
 async def get_emulator_status() -> Dict[str, Any]:
     """Get the status of the Satellite Emulator API."""
     return await call_api("GET", "/api/status")
+
+# docker compose may build the node image on first up; the API server allows
+# the subprocess 600s, so the HTTP call must wait slightly longer than that.
+COMPOSE_TIMEOUT = 620.0
+
+@mcp.tool()
+async def compose_up(services: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Start the Docker node containers (docker compose up -d).
+
+    Args:
+        services: Optional list of compose service names to start
+                  (e.g. ["satellite-1", "satellite-2", "ibi_es"]).
+                  Omit to start every service in docker-compose.yml.
+    """
+    payload = {"services": services} if services else {}
+    return await call_api("POST", "/api/compose/up", payload, timeout=COMPOSE_TIMEOUT)
+
+@mcp.tool()
+async def compose_down() -> Dict[str, Any]:
+    """Stop and remove the Docker node containers (docker compose down)."""
+    return await call_api("POST", "/api/compose/down", timeout=COMPOSE_TIMEOUT)
 
 # ============================================================================
 # PART 2: VM MANAGEMENT TOOLS (Direct Libvirt/SSH)

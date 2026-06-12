@@ -71,6 +71,13 @@ class Node:
 				self.is_external_vm = 0
 				logging.warning(f"is_external_vm not specified for node {name}, defaulting to 0 (internal)")
 
+			# is_docker=1 in config forces Docker/IFB mode without needing docker inspect.
+			# Auto-detected via docker inspect if not set.
+			try:
+				self._is_docker_flag = bool(int(Node.get('is_docker', 0)))
+			except (TypeError, ValueError):
+				self._is_docker_flag = False
+
 			try:
 				self.ip_ext = Node['ip_ext']
 			except KeyError:
@@ -128,10 +135,43 @@ class Node:
 				time.sleep(0.5)
 		raise TimeoutError(f"Could not obtain IP address for VM '{self._name}' after {max_retries} attempts")
 
+	def _is_docker_container(self):
+		"""Return True if this external-VM node is a local Docker container.
+		Checks the config flag first (is_docker=1); falls back to docker inspect."""
+		if not self.is_external_vm:
+			return False
+		if getattr(self, '_is_docker_flag', False):
+			return True
+		if not hasattr(self, '_docker_checked'):
+			try:
+				r = subprocess.run(
+					['docker', 'inspect', '--format', '{{.State.Pid}}', self._name],
+					capture_output=True, text=True, timeout=5)
+				self._docker_checked = r.returncode == 0 and r.stdout.strip().isdigit()
+			except Exception:
+				self._docker_checked = False
+		return self._docker_checked
+
+	def get_docker_veth(self):
+		"""Return the host-side veth interface name for this Docker container."""
+		try:
+			peer_idx = subprocess.run(
+				['docker', 'exec', self._name, 'cat', '/sys/class/net/eth0/iflink'],
+				capture_output=True, text=True, timeout=5).stdout.strip()
+			links = subprocess.run(['ip', 'link', 'show'], capture_output=True, text=True).stdout
+			for line in links.split('\n'):
+				if line.startswith(f'{peer_idx}:'):
+					return line.split(':')[1].strip().split('@')[0]
+		except Exception as e:
+			logging.error(f'get_docker_veth {self._name}: {e}')
+		return None
+
 	def _get_Host_interface(self, max_retries=240):
-		# Search the host-side interface of the VM associated to the node.
+		# For Docker containers return the IFB name cached by write_bash(); for
+		# external VMs return the configured interface; for internal VMs poll virsh.
 		if self.is_external_vm:
-			return self._VM_interface
+			ifb = getattr(self, '_ifb_iface', None)
+			return ifb if ifb else self._VM_interface
 		for _ in range(max_retries):
 			try:
 				cmd = f'virsh domifaddr {self._name}'
@@ -232,9 +272,12 @@ class Node:
 		n     = self._nodeNumber
 		vname = '%s.%d' % (iface, n) # e.g. 'eth0.1'
 		if self.is_external_vm:
-			# Vxlan named eth0.N so eth0 stays intact for management SSH.
-			# sudo works without password because Dockerfile sets NOPASSWD:ALL.
-			# Use the known interface from config instead of a separate SSH call.
+			# Docker containers: IFB-based tc is applied on the host; no vxlan needed.
+			# The emulated 10.0.0.x address rides eth0 as a secondary IP so its
+			# traffic crosses the same veth the host-side shaping captures.
+			if self._is_docker_container():
+				return 'sudo ip addr add %s/%s dev %s 2>/dev/null || true' % (str(self._ip), self._mask, iface)
+			# Real external VMs: vxlan tunnel so eth0 stays intact for management SSH.
 			command  = 'sudo ip link add %s type vxlan id %d00 remote 172.27.12.11 dev %s dstport 4789 2>/dev/null || true;'%(vname,n,iface)
 			command += 'sudo ip link set dev %s address 02:00:00:00:00:0%d 2>/dev/null || true;'%(vname,n)
 			command += 'sudo ip addr add %s/%s dev %s 2>/dev/null || true;'%(str(self._ip),self._mask,vname)
