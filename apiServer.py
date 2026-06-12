@@ -8,18 +8,8 @@ import logging
 import os
 from flask_cors import CORS
 
-# Create log directory if it doesn't exist
-os.makedirs('/tmp/log', exist_ok=True)
-
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/tmp/log/snes.log'),
-        logging.StreamHandler()
-    ]
-)
+from Class.log_config import setup_logging
+setup_logging()
 
 
 app = Flask(__name__)
@@ -40,30 +30,6 @@ global_state = {
     'ntp_process': None,
     'emulation_process': None
 }
-
-def starCesium():
-    """Start Cesium server"""
-    try:
-        shell = 'python3 Class/Server.py %s %f > cesium.log 2>&1'%(True,500)
-        logging.info(f"Starting Cesium server with command: {shell}")
-        process = subprocess.Popen(shell, shell=True)
-        global_state['cesium_process'] = process
-        return True
-    except Exception as e:
-        logging.error(f"Error starting Cesium server: {e}")
-        return False
-    
-def startNTPserver():
-    """Start NTP server"""
-    try:
-        shell = 'python3 ntpserver.py --port %d > ntp.log 2>&1'%(12345)
-        logging.info(f"Starting NTP server with command: {shell}")
-        process = subprocess.Popen(shell, shell=True)
-        global_state['ntp_process'] = process
-        return True
-    except Exception as e:
-        logging.error(f"Error starting NTP server: {e}")
-        return False
 
 def loadConfigFile(config_path):	
     """Load TOML configuration file"""

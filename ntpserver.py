@@ -49,25 +49,32 @@ class NTPServer:
             self.logger.error(f"Error reading time file: {e}")
             return None
 
-    def create_ntp_packet(self, originate_timestamp):
-        """Create NTP response packet (48 bytes)"""
+    def _to_ntp_ts(self, unix_time):
+        """Unix float time -> (seconds, fraction) NTP timestamp parts"""
+        seconds = int(unix_time) + self.NTP_DELTA
+        fraction = int((unix_time % 1) * 4294967296) & 0xFFFFFFFF
+        return seconds, fraction
+
+    def create_ntp_packet(self, originate_raw):
+        """Create NTP response packet (48 bytes).
+
+        originate_raw: the 8 raw bytes of the client's Transmit Timestamp,
+        echoed verbatim as the Originate Timestamp — clients reject replies
+        where this doesn't byte-match what they sent (including fraction).
+        """
         # Get time from simulation file
         custom_time = self.read_time_from_file()
         if custom_time is None:
             # Fallback to system time if file not available
             self.logger.warning("Using system time as fallback")
             custom_time = time.time()
-        
-        # Current time for receive and transmit timestamps
-        receive_time = time.time()
-        transmit_time = time.time()
-        
-        # Convert to NTP timestamps (seconds since 1900-01-01)
-        reference_timestamp = int(custom_time) + self.NTP_DELTA
-        originate_timestamp_ntp = originate_timestamp
-        receive_timestamp_ntp = int(receive_time) + self.NTP_DELTA
-        transmit_timestamp_ntp = int(transmit_time) + self.NTP_DELTA
-        
+
+        # Receive/Transmit are what clients use to set their clock — they
+        # must carry the SIMULATED time, otherwise nodes sync to host time.
+        ref_s, ref_f = self._to_ntp_ts(custom_time)
+        rx_s, rx_f = self._to_ntp_ts(custom_time)
+        tx_s, tx_f = self._to_ntp_ts(custom_time)
+
         # Build NTP packet manually (48 bytes)
         packet = bytearray(48)
         
@@ -93,21 +100,18 @@ class NTPServer:
         struct.pack_into('!I', packet, 12, 0)
         
         # Bytes 16-23: Reference Timestamp
-        struct.pack_into('!I', packet, 16, reference_timestamp)
-        struct.pack_into('!I', packet, 20, 0)  # Fractional part
-        
-        # Bytes 24-31: Originate Timestamp (from client)
-        struct.pack_into('!I', packet, 24, originate_timestamp_ntp)
-        struct.pack_into('!I', packet, 28, 0)  # Fractional part
-        
-        # Bytes 32-39: Receive Timestamp
-        struct.pack_into('!I', packet, 32, receive_timestamp_ntp)
-        struct.pack_into('!I', packet, 36, 0)  # Fractional part
-        
-        # Bytes 40-47: Transmit Timestamp
-        struct.pack_into('!I', packet, 40, transmit_timestamp_ntp)
-        struct.pack_into('!I', packet, 44, 0)  # Fractional part
-        
+        struct.pack_into('!II', packet, 16, ref_s, ref_f)
+
+        # Bytes 24-31: Originate Timestamp — echo the client's Transmit
+        # Timestamp bytes verbatim
+        packet[24:32] = originate_raw
+
+        # Bytes 32-39: Receive Timestamp (simulated time)
+        struct.pack_into('!II', packet, 32, rx_s, rx_f)
+
+        # Bytes 40-47: Transmit Timestamp (simulated time)
+        struct.pack_into('!II', packet, 40, tx_s, tx_f)
+
         return bytes(packet)
 
     def start_server(self):
@@ -128,19 +132,16 @@ class NTPServer:
                     data, addr = sock.recvfrom(48)
                     self.logger.debug(f"Received NTP request from {addr}")
                     
-                    # Extract originate timestamp from client request (bytes 40-43)
-                    if len(data) >= 44:  # Minimum to get originate timestamp
-                        try:
-                            originate_timestamp = struct.unpack('!I', data[40:44])[0]
-                        except Exception as e:
-                            self.logger.error(f"Error extracting timestamp: {e}")
-                            originate_timestamp = 0
+                    # The client's Transmit Timestamp (bytes 40-47) must be
+                    # echoed verbatim as our Originate Timestamp
+                    if len(data) >= 48:
+                        originate_raw = data[40:48]
                     else:
                         self.logger.warning(f"Short packet received: {len(data)} bytes")
-                        originate_timestamp = 0
-                    
+                        originate_raw = bytes(8)
+
                     # Create and send response
-                    response = self.create_ntp_packet(originate_timestamp)
+                    response = self.create_ntp_packet(originate_raw)
                     sock.sendto(response, addr)
                     
                 except socket.error as e:

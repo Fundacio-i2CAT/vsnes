@@ -140,9 +140,18 @@ class TwoBody(Orbit):
 		z = ECEF[2]
 		ECI = np.array([x,y,z])
 		return ECI
+	def _ECEF2LLH(self,ECEF):
+		# Geocentric latitude/longitude/height approximation from ECEF.
+		# (TwoBody is itself an approximate propagator, so the geocentric
+		# approximation is acceptable for visualization/position reporting.)
+		x, y, z = ECEF[0], ECEF[1], ECEF[2]
+		r = math.sqrt(x*x + y*y + z*z)
+		lat = math.degrees(math.asin(z / r)) if r > 0 else 0.0
+		lon = math.degrees(math.atan2(y, x))
+		h = r - a_Earth
+		return [lat, lon, h]
 	def _vectors(self,datetime_vector):
 		# Return cartesian cordinates in ECI [x,y,z]
-		#Load a timescale in the datetime
 		ECI = []
 		ECEF = []
 		POS = []
@@ -151,6 +160,7 @@ class TwoBody(Orbit):
 			ECEF.append(ECEF_1)
 			ECI_1 = self._ECEF2ECI(ECEF_1,datetime)
 			ECI.append(ECI_1)
+			POS.append(self._ECEF2LLH(ECEF_1))
 		return ECI,ECEF,POS
 	def _ECI(self,datetime):
 		# Return cartesian cordinates in ECI [x,y,z]

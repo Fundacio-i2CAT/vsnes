@@ -48,123 +48,7 @@ unicast_flooding = 0
 		interface = 'eth0'
 		[SpaceSegment.SatelliteSistem.clone_VM]
 			name_VM = 'SATELLITE-3' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-4' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.104'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-4' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-5' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.105'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-5' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-6' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.106'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-6' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-7' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.107'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-7' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-8' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.108'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-8' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-9' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.109'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-9' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-10' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.110'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-10' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-11' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.111'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-11' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SATELLITE-12' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.112'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-12' 
+
 [GroundSegment]
 	[[GroundSegment.GroundSistem]]
 		name = 'Ibi_ES'
@@ -180,20 +64,7 @@ unicast_flooding = 0
 		interface = 'eth0'
 		[GroundSegment.GroundSistem.clone_VM]
 			name_VM = 'Ibi_ES'
-	[[GroundSegment.GroundSistem]]
-		name = 'Foggia_IT'
-		group = 'GS'
-		latitude = 41.4616
-		longitude = 15.5404
-		height = 75.0
-		OS = 'debian' #ubuntu o alpine
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		ip_ext = '172.27.12.202'
-		interface = 'eth0'
-		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'Foggia_IT'
+
 [Channels]
 	[[Channels.Channel]]
 		Node1 = 'LEO' #Group name

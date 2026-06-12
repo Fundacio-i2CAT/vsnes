@@ -42,7 +42,8 @@ class Satellite(Node):
 		Node.__init__(self,name = sat.name, Node = constallation,network = network,mask = mask,nNodes = nNodes)
 		self._ECI,self._ECEF,self._POS = self._orbit._vectors(datetime_vector)
 
-		json_data = {'orbit': self._POS}
+		# _POS rows may be numpy arrays (vectorized propagation) — convert for JSON
+		json_data = {'orbit': [[float(v) for v in p] for p in self._POS]}
 		position_file = f'Positions/{self.name}-total.json'
 		try:
 			with open(position_file,'w') as file:

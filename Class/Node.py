@@ -6,21 +6,10 @@ import sys
 import logging
 import os
 import socket
-import re
-import json
 
 
-# Setup logging
-os.makedirs('/tmp/log', exist_ok=True)
-
-logging.basicConfig(
-	level=logging.INFO,
-	format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-	handlers=[
-		logging.FileHandler('/tmp/log/snes.log'),
-		logging.StreamHandler()
-	]
-)
+from Class.log_config import setup_logging
+setup_logging()
 # mother class of Satellite and GroundStation
 path = '/var/lib/libvirt/images/'
 
@@ -124,39 +113,32 @@ class Node:
 	def get_basic_data(self):
 			return f'{self._name} (ip:{self._ip})'
 
-	def _get_VM_ip(self):
-		# Search the ip of the VM associated to the node and return them
-		while True:
-			# Sometimes the code is faster then the DHCP protocol and the VM has no ip address yet. 
+	def _get_VM_ip(self, max_retries=240):
+		# Search the ip of the VM associated to the node and return it.
+		# Retries while DHCP has not assigned an address yet (up to ~2 min).
+		if self.is_external_vm:
+			return self.ip_ext
+		for _ in range(max_retries):
 			try:
-				#The command return two lines, one with the legend and other with information of the expecific VM
-				#
-				if self.is_external_vm: 
-					VM_ip = self.ip_ext
-				else:
-					cmd = f'virsh domifaddr {self._name}' 
-					VM_ip = subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[3][:-3]
-				#print("IP jjjof %s: %s"%(self._name,VM_ip))
-				return VM_ip
+				#The command returns two lines, a legend and the VM information
+				cmd = f'virsh domifaddr {self._name}'
+				return subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[3][:-3]
 			except IndexError:
-				# Add a small sleep to prevent 100% CPU usage loop
-				time.sleep(0.5) 
+				# Small sleep to prevent 100% CPU usage loop
+				time.sleep(0.5)
+		raise TimeoutError(f"Could not obtain IP address for VM '{self._name}' after {max_retries} attempts")
 
-	def _get_Host_interface(self):
-		# Search the ip of the VM associated to the node and return them
-		while True:
+	def _get_Host_interface(self, max_retries=240):
+		# Search the host-side interface of the VM associated to the node.
+		if self.is_external_vm:
+			return self._VM_interface
+		for _ in range(max_retries):
 			try:
-				#The command return two lines, one with the legend and other with information of the expecific VM
-				#
-				if self.is_external_vm:
-					 VM_if = self._VM_interface
-				else:
-					cmd = f'virsh domifaddr {self._name}' 
-					VM_if = subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[0]
-				#print("Interface of %s: %s"%(self._name,VM_if))
-				return VM_if
+				cmd = f'virsh domifaddr {self._name}'
+				return subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[0]
 			except IndexError:
 				time.sleep(0.5)
+		raise TimeoutError(f"Could not obtain host interface for VM '{self._name}' after {max_retries} attempts")
 
 	def _initial_configuration (self, nNodes):
 		# Sends configuration commands with ssh to the VM for change de username and defines the VLAN interface
@@ -203,11 +185,11 @@ class Node:
 			command2 += f"echo {self._password}|su -c 'ip addr add {self._ip}/{self._mask} dev {self._VM_interface}.1';"
 			command2 += f"echo {self._password}|su -c 'ip link set dev {self._VM_interface}.1 up'"
 		
-		while True:
-			# Repeats the action if the connection was unsuccessfull 
+		max_retries = 120
+		for attempt in range(max_retries):
+			# Repeats the action if the connection was unsuccessfull
 			try:
 				#Connect to port 22
-				#print("Username: %s, Password: %s"%(self._username,self._password))
 				ssh.connect(VM_ip, 22, self._username, self._password, timeout=10)
 
 				# Execute command 1 and check for success
@@ -239,29 +221,12 @@ class Node:
 
 					ssh.close()
 				break
-			except (paramiko.ssh_exception.NoValidConnectionsError, Exception) as e:
+			except Exception as e:
 				print(f"SSH connection error on {self._name}: {e}, retrying...")
 				time.sleep(1)
-	def arp_table(self, node_list):
-		if self.check_VM():
-			# Search the ip of the VM
-			VM_ip = self._get_VM_ip()
-			# Define a class object SSHClient
-			ssh = paramiko.SSHClient()
-			ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-			
-			for Node in node_list:
-				if Node.check_VM() and not Node.is_external_vm:
-					MAC = subprocess.run('virsh domifaddr %s'%(Node.name), capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[1]
-					if self.OS == 'ubuntu':
-						command =  'echo %s|sudo -S arp -s %s %s'%(self._password,str(Node._ip),MAC)
-					else:
-						command =  "echo %s|su -c 'arp -s %s %s'"%(self._password,str(Node._ip),MAC)
-					#Connect to port 22
-					ssh.connect(VM_ip, 22, self._username, self._password, timeout=10)
-					#Execute the command
-					ssh.exec_command(command)
-					
+		else:
+			raise TimeoutError(f"Initial configuration of '{self._name}' failed: SSH unreachable after {max_retries} attempts")
+
 	def _standard_Ubuntu(self):
 		iface = self._VM_interface   # e.g. 'eth0'
 		n     = self._nodeNumber
@@ -441,42 +406,6 @@ class Node:
 		else:
 			logging.warning(f"VM '{name}' not found for stopping")
 
-	def ssh_connection(self):
-		# Open a terminal with ssh connection to the VM
-		if self.check_VM():
-			while True:
-				# Count the number of terminals that are open
-				Terminals = subprocess.run('ls /dev/pts', capture_output=True, text=True, shell=True).stdout.split()
-				nTerminals_before = len(Terminals)
-				# Get the ip addres of the VM
-				VM_ip = self._get_VM_ip()
-				# Try to connect to the VM with sshpass
-				shell = f'gnome-terminal -t {self._name} -- sshpass -p {self._password} ssh {self._username}@{VM_ip}'
-				subprocess.run(shell, shell=True)
-				time.sleep(0.5) # Increased sleep
-				
-				# Count the number of terminals that are open
-				Terminals = subprocess.run('ls /dev/pts', capture_output=True, text=True, shell=True).stdout.split()
-				nTerminals = len(Terminals)
-				if nTerminals_before == nTerminals:
-					nTerminals_before = nTerminals
-					# Check if the terminal open with sshpass still opened. If it's not true, it open a new with ssh connection 
-					shell = f'gnome-terminal -t {self._name} -- ssh {self._username}@{VM_ip}'
-					subprocess.run(shell, shell=True)
-					time.sleep(0.5)
-					# Count the number of terminals that are open
-					Terminals = subprocess.run('ls /dev/pts', capture_output=True, text=True, shell=True).stdout.split()
-					nTerminals = len(Terminals)
-					if nTerminals_before == nTerminals:
-						# Solve a problem with the key
-						shell = f'ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "{VM_ip}"'
-						subprocess.run(shell, shell=True)
-					else: break
-						
-				else: break
-		else:
-			print(f"The {self._name}'s VM is not available. It doesn't exist or is shut off")
-
 	def Emulation_startup_script(self, node_list):
 		if self.check_VM() and self.EmuScript != None:
 			try:
@@ -498,16 +427,19 @@ class Node:
 			# Define a class object SSHClient
 			ssh = paramiko.SSHClient()
 			ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-			while True:
-				# Repeats the action if the connection was unsuccessfull 
+			max_retries = 60
+			for _ in range(max_retries):
+				# Repeats the action if the connection was unsuccessfull
 				try:
 					# Connect to port 22
-					ssh.connect(VM_ip, 22, self._username, self._password)
+					ssh.connect(VM_ip, 22, self._username, self._password, timeout=10)
 					# Execute the command
 					ssh.exec_command(my_script)
 					break
 				except paramiko.ssh_exception.NoValidConnectionsError:
 					time.sleep(1) # Wait before retry
+			else:
+				logging.error(f"EmuScript for '{self._name}' not executed: SSH unreachable after {max_retries} attempts")
 
 	def check_VM(self):
 		name = self._name
@@ -534,20 +466,3 @@ class Node:
 					return True
 			else:
 				return False
-	def get_phy_iface(self):
-		# Comando para obtener las IPs en formato JSON (muy fácil de parsear en Linux moderno)
-		comando = f"sshpass -p '{self._password}' ssh -o StrictHostKeyChecking=no {self._username}@{self.ip_ext} 'ip -j addr'"
-		
-		try:
-			resultado = subprocess.check_output(comando, shell=True).decode()
-			datos = json.loads(resultado)
-			
-			for interfaz in datos:
-				nombre = interfaz['ifname']
-				for addr_info in interfaz.get('addr_info', []):
-					if addr_info.get('local') == self.ip_ext:
-						return nombre
-		except Exception as e:
-			return f"Error: {e}"
-		return None
-			

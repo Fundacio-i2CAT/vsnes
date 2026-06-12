@@ -17,25 +17,9 @@ import sys
 import os
 import logging
 
-# Create log directory if it doesn't exist
-os.makedirs('/tmp/log', exist_ok=True)
-	
-# Setup logging (if not already configured by Node.py)
-if not logging.getLogger().handlers:
-	os.makedirs('/tmp/log', exist_ok=True)
-	
-	logging.basicConfig(
-		level=logging.INFO,
-		format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-		handlers=[
-			logging.FileHandler('/tmp/log/snes.log'),
-			logging.StreamHandler()
-		]
-	)
-ip_Address = []
-Network = None
-host_interface = 'enp4s0'
-# class for the creation and management of nodes and channels. 
+from Class.log_config import setup_logging
+setup_logging()
+# class for the creation and management of nodes and channels.
 class scenario:
 	'''A scenario load a configuration file and managed different classes'''
 	#The node_list property agrups all the nodes(Satellites and Graond Stations)
@@ -80,48 +64,39 @@ class scenario:
 			error_msg = f"Missing 'unicast_flooding' configuration"
 			logging.error(error_msg)
 			raise KeyError(error_msg)
-		global ip_Address
-		global Network
-		global Network_ext
-		global host_interface
-
 		try:
-			Network_ext = TOMLfile['network_ext']
+			self._network_ext = TOMLfile['network_ext']
 		except KeyError:
 			error_msg = f"Missing 'network_ext' configuration"
 			logging.error(error_msg)
 			raise KeyError(error_msg)
 
 		try:
-			host_interface = TOMLfile['host_interface']
+			self._host_interface = TOMLfile['host_interface']
 		except KeyError:
 			import socket
-			host_interface = next(
+			self._host_interface = next(
 				(iface for iface in socket.if_nameindex()
 				 if iface[1] not in ('lo', 'virbr0') and not iface[1].startswith('vnet')),
 				(None, 'enp4s0')
 			)[1]
-			logging.warning(f"'host_interface' not set in config — auto-detected: {host_interface}")
+			logging.warning(f"'host_interface' not set in config — auto-detected: {self._host_interface}")
 		try:
-			Network = TOMLfile['network']
+			network = TOMLfile['network']
 		except KeyError:
-			error_msg = f"Missing 'unicast_flooding' configuration"
+			error_msg = f"Missing 'network' configuration"
 			logging.error(error_msg)
 			raise KeyError(error_msg)
 		try:
-			Network = IPv4Network(Network)
+			self._Network = IPv4Network(network)
 		except AddressValueError:
 				logging.warning(f"Invalid network address: {TOMLfile['network']}")
 				network = '10.0.0.0/24'
 				TOMLfile['network'] = network
-				Network = IPv4Network(network)
+				self._Network = IPv4Network(network)
 
-
-
-		for addr in Network:
-			ip_Address.append(addr)
-		ip_Address = ip_Address[1:-1]
-		logging.info(f"IP address pool configured with {len(ip_Address)} available addresses")
+		self._ip_Address = list(self._Network)[1:-1]
+		logging.info(f"IP address pool configured with {len(self._ip_Address)} available addresses")
 
 		# Load Satellites
 		try:
@@ -140,8 +115,6 @@ class scenario:
 			logging.info(f"Loaded {len(satellites)} satellites from TLE file")
 		except UnboundLocalError:
 			logging.error("TLE file not found or unreadable")
-#	   for sat in satellites:
-#		   self.AddSatellite(sat,SatelliteSistem)
 
 		for SatelliteSistem in SpaceSegment['SatelliteSistem']:
 			for sat in satellites:
@@ -157,6 +130,11 @@ class scenario:
 			logging.warning("No GroundSegment section found in TOML")
 		for GroundSistem in GroundSegment['GroundSistem']:
 			self.AddGroundStation(GroundSistem)
+
+		# Precompute the full contact/delay timeline now that all nodes are
+		# loaded. Emulation, CZML generation and speed control all reuse it.
+		self._channel.precompute(self._node_list, self._nNodes,
+								 len(self._time_parameters.get_datetimes()))
 
 		# Read an existing CZML file
 		filename = 'Class/templates/ScenarioCZML.czml'
@@ -175,11 +153,7 @@ class scenario:
 		#Creates a Satellite object and add to the scenario
 		try:
 			#Create a Satellite Node
-			SAT = Satellite(sat_tle,constallation,ip_Address[self._nNodes],Network.netmask,self._nNodes,self._time_parameters.get_datetimes())
-			#Check if the node exist yet
-			# if self.Exist_Node(SAT):
-			#   print ("- Satellite %s: NOT ACCEPTED"%(SAT.name))
-			# else:
+			SAT = Satellite(sat_tle,constallation,self._ip_Address[self._nNodes],self._Network.netmask,self._nNodes,self._time_parameters.get_datetimes())
 			#Add the node to the node list
 			self._node_list.append(SAT)
 			logging.info(f"Satellite '{SAT.name}' added to scenario")
@@ -208,7 +182,7 @@ class scenario:
 		#Creates a GroundStation object and add to the scenario
 		try:
 			#Creade a GroundStation Node
-			GS = GroundStation(TOML_GS, ip_Address[self._nNodes], Network.netmask,self._nNodes)
+			GS = GroundStation(TOML_GS, self._ip_Address[self._nNodes], self._Network.netmask,self._nNodes)
 			#Check if the node exist yet
 			if self.Exist_Node(GS) or GS.name == None:
 				error_msg = f"Ground Station '{GS.name}' NOT ACCEPTED"
@@ -247,125 +221,91 @@ class scenario:
 		self._channel.update(self._node_list,self._nNodes,self._time_parameters._marker,False)
 	def write_bash (self):
 		# write two bash files, one for define the scenario and  other to delete the configuration of the first file.
-		#Open the two bash files
-		w_runtime = open("runtime_bash.sh", "w")
-		w_shutdown = open("shutdown_bash.sh", "w")
-		w_runtime.write('#!/bin/sh\n')
-		w_shutdown.write('#!/bin/sh\n')
+		host_interface = self._host_interface
+		with open("runtime_bash.sh", "w") as w_runtime, open("shutdown_bash.sh", "w") as w_shutdown:
+			w_runtime.write('#!/bin/sh\n')
+			w_shutdown.write('#!/bin/sh\n')
 
-		w_runtime.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
-		w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
-		w_runtime.write('sudo brctl stp brSATEMU off\n')
-		if self._unicast_flooding:
-			w_runtime.write('sudo brctl setageing brSATEMU 0\n')
-		# Commands to enable external domains/VMs in Relay mode
-		w_runtime.write('sudo sysctl -w net.ipv4.ip_forward=1\n')
-		w_runtime.write('sudo iptables -I FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, Network_ext))
-		w_runtime.write('sudo ip link add vsnes_ext type vxlan id 10 dev %s group 239.1.1.1 dstport 4789\n'%(host_interface))
-		w_runtime.write('sudo ip link set vsnes_ext master virbr0\n')
-		w_runtime.write('sudo ip link set vsnes_ext up\n')
-		
-		for n in range(1,self._nNodes+1):
-			if self._node_list[n-1].check_VM():
-				#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
-				interface = self._node_list[n-1]._get_Host_interface()
-				if self._node_list[n-1].is_external_vm:
-					line_runtime = str('sudo -S ip link add %s type vxlan id %d00 remote %s dev %s dstport 4789;'%(interface,n,self._node_list[n-1].ip_ext,host_interface))
-					w_runtime.write(line_runtime)
-					line_runtime = str('sudo ip link set dev %s up\n'%(interface))
-					w_runtime.write(line_runtime)
-				# Define an interface in a VLAN
-				line_runtime = str('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-				w_runtime.write(line_runtime)
-				#Set up
-				line_runtime = str('sudo ip link set dev %s.%d up\n'%(interface,n))
-				w_runtime.write(line_runtime)
-				#Add the interface to the bridge
-				line_runtime = str('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
-				w_runtime.write(line_runtime)
-				#Defines a tc qdisc root
-				line_runtime = str('sudo tc qdisc add dev %s.%d root handle 1: htb\n'%(interface,n))
-				w_runtime.write(line_runtime)
-				line_runtime = str('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
-				w_runtime.write(line_runtime)
-				#Delete the root of tc qdisc
-				line_shutdown = str('sudo tc qdisc del dev %s.%d root handle 1: htb\n'%(interface,n))
-				w_shutdown.write(line_shutdown)
-				# Delete the interface associated with the VLAN 
-				line_shutdown = str('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
-				w_shutdown.write(line_shutdown)
-				line_shutdown = str('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
-				w_shutdown.write(line_shutdown)
-				if self._node_list[n-1].service == 'relay' or self._node_list[n-1].service == 'batman' or self._node_list[n-1].service == 'RELAY':
-					nodeNumber2 = self._nNodes + n
-					line_runtime = 'sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2)
-					w_runtime.write(line_runtime)
-					line_shutdown = 'sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2)
-					w_shutdown.write(line_shutdown)
-					line_runtime = 'sudo ip link set dev %s.%d up\n' % (interface,nodeNumber2)
-					w_runtime.write(line_runtime)
-					line_runtime = 'sudo brctl addif brSATEMU %s.%d\n' % (interface,nodeNumber2)
-					w_runtime.write(line_runtime)
-					line_runtime = str('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
-					w_runtime.write(line_runtime)
-					line_shutdown = str('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
-					w_shutdown.write(line_shutdown)
-					# Add the conditions of the channel
-					line_runtime = str('sudo tc qdisc add dev %s.%d root netem loss 100'%(interface,nodeNumber2))
-					line_runtime += '%\n'
-					w_runtime.write(line_runtime)
-		#Creates one classid per node in every Vlan interface and define channel properties
-		for n in range(1,self._nNodes+1):
-			if self._node_list[n-1].check_VM():
-				interface = self._node_list[n-1]._get_Host_interface()
-				for j in range(1,self._nNodes+1):
-					#Obtain the delay between the nodes n-1 and j-1
-					delay = self._channel.get_channel(n-1,j-1)
-					#print('Delay between %s and %s: %fms'%(self._node_list[n-1].get_basic_data(),self._node_list[j-1].get_basic_data(),delay))
-					if delay == -2:
-						#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
-						line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
-						w_runtime.write(line_runtime)
-						# Add the conditions of the channel
-						line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
-						w_runtime.write(line_runtime)
-					else:
-						Channel = self._channel._Get_Channel_Definition(self._node_list[n-1],self._node_list[j-1])
-						#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
-						try:
-							line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate %fmbit\n'%(interface,n,j,Channel['Data_rate']))
-						except KeyError or TypeError:
-							line_runtime = str('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
-						w_runtime.write(line_runtime)
-						# Add the conditions of the channel
-						if delay == -1:
-							line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
-							w_runtime.write(line_runtime)
+			w_runtime.write('sudo ip link set dev brSATEMU down\nsudo brctl delbr brSATEMU\n')
+			w_runtime.write('sudo brctl addbr brSATEMU\nsudo ip link set dev brSATEMU up\n')
+			w_runtime.write('sudo brctl stp brSATEMU off\n')
+			if self._unicast_flooding:
+				w_runtime.write('sudo brctl setageing brSATEMU 0\n')
+			# Commands to enable external domains/VMs in Relay mode
+			w_runtime.write('sudo sysctl -w net.ipv4.ip_forward=1\n')
+			w_runtime.write('sudo iptables -I FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, self._network_ext))
+			w_runtime.write('sudo ip link add vsnes_ext type vxlan id 10 dev %s group 239.1.1.1 dstport 4789\n'%(host_interface))
+			w_runtime.write('sudo ip link set vsnes_ext master virbr0\n')
+			w_runtime.write('sudo ip link set vsnes_ext up\n')
 
+			for n in range(1,self._nNodes+1):
+				if self._node_list[n-1].check_VM():
+					#Loop from 1 to one more than the number of nodes to define one VLAN per node and start the VLANs in 1
+					interface = self._node_list[n-1]._get_Host_interface()
+					if self._node_list[n-1].is_external_vm:
+						w_runtime.write('sudo -S ip link add %s type vxlan id %d00 remote %s dev %s dstport 4789;'%(interface,n,self._node_list[n-1].ip_ext,host_interface))
+						w_runtime.write('sudo ip link set dev %s up\n'%(interface))
+					# Define an interface in a VLAN
+					w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+					#Set up
+					w_runtime.write('sudo ip link set dev %s.%d up\n'%(interface,n))
+					#Add the interface to the bridge
+					w_runtime.write('sudo brctl addif brSATEMU %s.%d\n'%(interface,n))
+					#Defines a tc qdisc root
+					w_runtime.write('sudo tc qdisc add dev %s.%d root handle 1: htb\n'%(interface,n))
+					w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
+					#Delete the root of tc qdisc
+					w_shutdown.write('sudo tc qdisc del dev %s.%d root handle 1: htb\n'%(interface,n))
+					# Delete the interface associated with the VLAN
+					w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,n,n))
+					w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,n,n))
+					if self._node_list[n-1].service in ('relay', 'batman', 'RELAY'):
+						nodeNumber2 = self._nNodes + n
+						w_runtime.write('sudo ip link add link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2))
+						w_shutdown.write('sudo ip link del link %s name %s.%d type vlan id %d\n'%(interface,interface,nodeNumber2,nodeNumber2))
+						w_runtime.write('sudo ip link set dev %s.%d up\n' % (interface,nodeNumber2))
+						w_runtime.write('sudo brctl addif brSATEMU %s.%d\n' % (interface,nodeNumber2))
+						w_runtime.write('sudo iptables -A PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
+						w_shutdown.write('sudo iptables -D PREROUTING -t mangle -m physdev --physdev-in %s.%d -j MARK --set-mark %d\n'%(interface,nodeNumber2,n))
+						# Add the conditions of the channel
+						w_runtime.write('sudo tc qdisc add dev %s.%d root netem loss 100%%\n'%(interface,nodeNumber2))
+			#Creates one classid per node in every Vlan interface and define channel properties
+			for n in range(1,self._nNodes+1):
+				if self._node_list[n-1].check_VM():
+					interface = self._node_list[n-1]._get_Host_interface()
+					for j in range(1,self._nNodes+1):
+						#Obtain the delay between the nodes n-1 and j-1
+						delay = self._channel.get_channel(n-1,j-1)
+						if delay == -2:
+							#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
+							w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
+							# Add the conditions of the channel
+							w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
 						else:
-							Losses = str(Channel['Packet_loss'])+'%'
-							Correlated_losses = str(Channel['Correlated_losses'])+'%'
-							line_runtime = str('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem delay %fms loss %s %s\n'%(interface,n,j,j,delay,Losses,Correlated_losses))
-							w_runtime.write(line_runtime)
-					ip = ip_Address[j-1]
-					# Define filters according to the source ip 
-					line_runtime = str('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n'%(interface,n,j,j))
-					w_runtime.write(line_runtime)
-					#line_runtime = str('sudo tc filter add dev %s.%d parent 1: protocol arp prio 1 u32 match u32 0 0 flowid 1:%d\n'%(interface,n,j))
-					#w_runtime.write(line_runtime)
+							Channel = self._channel._Get_Channel_Definition(self._node_list[n-1],self._node_list[j-1])
+							#Create a classid in the interface of the vlan n (of the node in the position: n-1) to define the channel with de node j-1
+							try:
+								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate %fmbit\n'%(interface,n,j,float(Channel['Data_rate'])))
+							except (KeyError, TypeError, ValueError):
+								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n'%(interface,n,j))
+							# Add the conditions of the channel
+							if delay == -1:
+								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n'%(interface,n,j,j))
+							else:
+								Losses = str(Channel['Packet_loss'])+'%'
+								Correlated_losses = str(Channel['Correlated_losses'])+'%'
+								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem delay %fms loss %s %s\n'%(interface,n,j,j,delay,Losses,Correlated_losses))
+						# Define filters according to the source ip
+						w_runtime.write('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n'%(interface,n,j,j))
 
-				if self._node_list[n-1].is_external_vm:
-					line_shutdown = str(f"sshpass -p '{self._node_list[n-1]._password}' ssh -o StrictHostKeyChecking=no {self._node_list[n-1]._username}@{self._node_list[n-1].ip_ext} 'sudo -S ip link del {interface}'\n")
-					w_shutdown.write(line_shutdown)
-		# Tear down global interfaces after all per-node cleanup
-		w_shutdown.write('sudo ip link set vsnes_ext down\n')
-		w_shutdown.write('sudo ip link del vsnes_ext\n')
-		w_shutdown.write('sudo iptables -D FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, Network_ext))
-		w_shutdown.write('sudo ip link set dev brSATEMU down\n')
-		w_shutdown.write('sudo brctl delbr brSATEMU\n')
-		# Close opened files
-		w_runtime.close()
-		w_shutdown.close()
+					if self._node_list[n-1].is_external_vm:
+						w_shutdown.write(f"sshpass -p '{self._node_list[n-1]._password}' ssh -o StrictHostKeyChecking=no {self._node_list[n-1]._username}@{self._node_list[n-1].ip_ext} 'sudo -S ip link del {interface}'\n")
+			# Tear down global interfaces after all per-node cleanup
+			w_shutdown.write('sudo ip link set vsnes_ext down\n')
+			w_shutdown.write('sudo ip link del vsnes_ext\n')
+			w_shutdown.write('sudo iptables -D FORWARD -i %s -o virbr0 -s %s -d 192.168.122.0/24 -j ACCEPT\n'%(host_interface, self._network_ext))
+			w_shutdown.write('sudo ip link set dev brSATEMU down\n')
+			w_shutdown.write('sudo brctl delbr brSATEMU\n')
 		# Make the files executable
 		subprocess.run(['chmod', '+x', 'runtime_bash.sh'])
 		subprocess.run(['chmod', '+x', 'shutdown_bash.sh'])
@@ -401,9 +341,13 @@ class scenario:
 			self._emulator_process = None
 		self._run_shutdown(password)
 	def start_Network (self):
-		exist_net = subprocess.run('virsh net-list | grep -c -w default', capture_output = True, text = True, shell = True).stdout
-		if int(exist_net) == 0:
-			subprocess.run(['virsh', 'net-start', 'default'])
+		# libvirt is optional (only needed for internal VMs); skip if absent
+		try:
+			exist_net = subprocess.run('virsh net-list | grep -c -w default', capture_output = True, text = True, shell = True).stdout
+			if int(exist_net) == 0:
+				subprocess.run(['virsh', 'net-start', 'default'])
+		except (ValueError, FileNotFoundError):
+			logging.warning("libvirt/virsh not available — skipping default network start (internal VMs disabled)")
 	
 	def start_scenario_VM(self):
 		logging.info("Starting scenario in VM mode")
@@ -432,7 +376,8 @@ class scenario:
 		self._running = True
 
 		if EMU:
-			#self._Emulation_startup_script()	
+			if any(getattr(node, 'EmuScript', None) for node in self._node_list):
+				self._Emulation_startup_script()
 			self.write_bash()
 
 		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
@@ -453,30 +398,12 @@ class scenario:
 				subprocess.call('./runtime_bash.sh')
 
 		time.sleep(5)
-		
+
 		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 		self._emit_sim_block()
 		time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
-		Nversion = 0
-		clone_czml = czml.CZML()
-		ID = 'document'
-		name = 'Satellite Network Emulator'
-		Nversion += 1
-		version= self.czml_doc.packets[0].version[0]+'.'+str(Nversion)
-		interval = self._time_parameters.get_interval()
-		multiplier = self.get_speed()
-		currentTime = self._time_parameters.get_date_time().isoformat()
-		clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'UNBOUNDED',step = 'SYSTEM_CLOCK_MULTIPLIER')
-		packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
-		packet1.availability = interval
-		clone_czml.packets.append(packet1)
-		for packet in self.czml_doc.packets[1:]:
-			clone_czml.packets.append(packet)
-		filename = "Class/templates/ScenarioCZML.czml"
-		clone_czml.write(filename)
-		self.czml_doc = clone_czml
-		with open("simulation_time.txt", "w") as f:
-			f.write(currentTime)
+		Nversion = 1
+		self._update_czml_clock(Nversion, self.get_speed())
 		while self._running:
 			# Initialize a document
 			start = time.time()
@@ -497,25 +424,27 @@ class scenario:
 				multiplier = self._time_parameters.get_TimeInterval()/total_time
 				stopTime = 0
 				
-			clone_czml = czml.CZML()
-			ID = 'document'
-			name = 'Satellite Network Emulator'
 			Nversion += 1
-			version= self.czml_doc.packets[0].version[0]+'.'+str(Nversion)
-			interval = self._time_parameters.get_interval()
-			currentTime = self._time_parameters.get_date_time().isoformat()
-			clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range = 'UNBOUNDED',step = 'SYSTEM_CLOCK_MULTIPLIER')
-			packet1 = czml.CZMLPacket(id=ID,name=name,version=version,clock=clock)
-			packet1.availability = interval
-			clone_czml.packets.append(packet1)
-			for packet in self.czml_doc.packets[1:]:
-				clone_czml.packets.append(packet)
-			filename = "Class/templates/ScenarioCZML.czml"
-			clone_czml.write(filename)
-			self.czml_doc = clone_czml
-			with open("simulation_time.txt", "w") as f:
-				f.write(currentTime)
+			self._update_czml_clock(Nversion, multiplier)
 			time.sleep(stopTime)
+
+	def _update_czml_clock(self, Nversion, multiplier):
+		# Replace only the document (clock) packet — the node/channel packets
+		# are static during a run — and write the file atomically so the web
+		# server never reads a half-written document.
+		version = self.czml_doc.packets[0].version[0]+'.'+str(Nversion)
+		interval = self._time_parameters.get_interval()
+		currentTime = self._time_parameters.get_date_time().isoformat()
+		clock = czml.Clock(interval=interval,currentTime=currentTime,multiplier=multiplier,range='UNBOUNDED',step='SYSTEM_CLOCK_MULTIPLIER')
+		packet1 = czml.CZMLPacket(id='document',name='Satellite Network Emulator',version=version,clock=clock)
+		packet1.availability = interval
+		self.czml_doc.packets[0] = packet1
+		filename = "Class/templates/ScenarioCZML.czml"
+		tmpname = filename + '.tmp'
+		self.czml_doc.write(tmpname)
+		os.replace(tmpname, filename)
+		with open("simulation_time.txt", "w") as f:
+			f.write(currentTime)
 	
 	
 	def check_VMs(self):
@@ -557,8 +486,8 @@ class scenario:
 			description += 'Node %d: %s\n'%(n+1,self._node_list[n].description().replace('<h3>','').replace('<p>','').replace('</h3>','\n').replace('</p>','').replace('</small>','').replace('<small>',''))
 		return description
 	def _Emulation_startup_script(self):
+		# Run the user-provided EmuScript on each node VM (if configured)
 		for Node in self._node_list:
-			Node.arp_table(self._node_list)
 			Node.Emulation_startup_script(self._node_list)
 	def write_czml (self):
 		# Initialize a document
@@ -586,7 +515,7 @@ class scenario:
 			for j in range(n+1,self._nNodes):
 				print ('Writting the Cesium configuration file. Packages computed %d/%d.'%(cont,n_packets))
 				sys.stdout.write("\x1b[1A\x1b[2K")
-				result = self._channel.czml_channels(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j])
+				result = self._channel.czml_channels(self._time_parameters.get_datetimes(),self._node_list[n],self._node_list[j],idx1=n,idx2=j)
 				if result is not None:
 					self.czml_doc.packets.append(result)
 				cont += 1

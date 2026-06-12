@@ -21,14 +21,18 @@ def index():
 
 @app.route('/satsPosition', methods=['GET'])
 def check_locations():
+    # Serve the current position of a node. Channel.update() writes
+    # Positions/nodes.json once per tick with every node's current state.
     try:
         name = request.args.get('name')
         if name is None:
             return jsonify({"error": "name parameter is required"})
-        filename = f'Positions/{name}.json'
-        with open(filename, 'r') as file:
-            json_data = json.load(file)
-            return jsonify(json_data)
+        with open('Positions/nodes.json', 'r') as file:
+            nodes = json.load(file)
+        for node in nodes:
+            if node.get('name') == name:
+                return jsonify(node)
+        return jsonify({"error": f"node '{name}' not found"})
     except Exception as e:
         print(f"Error reading file: {str(e)}")
         return jsonify({"error": "error"})
