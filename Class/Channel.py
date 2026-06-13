@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import subprocess
+import threading
 import logging
 from Class.Satellite import Satellite
 from czml import czml
@@ -17,6 +18,11 @@ RAD_TO_DEG = 180.0 / np.pi
 C_INV_MS = 1000.0 / c		   # Precompute for delay calculation
 
 TC_BATCH_FILE = '/tmp/batch_tc_update.txt'
+OLSR_CHAIN    = 'VSNES_OLSR'
+# Debian 12 containers default to iptables-nft, which conflicts with
+# Docker's own nftables rules. Use iptables-legacy (xt_tables kernel
+# backend) inside containers for OLSR filtering.
+OLSR_IPTABLES = 'iptables-legacy'
 POSITIONS_FILE = 'Positions/nodes.json'
 
 class ChannelState(IntEnum):
@@ -53,6 +59,11 @@ class channel:
 		# is forced to 100% loss next tick (the node is logically removed from the
 		# matrix) while all other pairs keep working. Reversible via revive_node().
 		self._killed = set()
+		# OLSR topology sync: set of frozenset({n, j}) pairs currently blocked by
+		# iptables so OLSRd only discovers in-range neighbours. Populated by
+		# init_olsr_rules() and updated each tick by update().
+		self._olsr_blocked_pairs = set()
+		self._olsr_enabled = False
 
 	def kill_node(self, name):
 		'''Logically remove a node: force all its links to 100% loss. Reversible.'''
@@ -127,6 +138,7 @@ class channel:
 		# Snapshot of the previous state (real copy, not an alias) for diffing
 		old_matrix = [row[:] for row in self._delay_matrix]
 		script_lines = []
+		olsr_cmds = []
 		self._exist_channel = False
 
 		node_cache = []
@@ -225,10 +237,18 @@ class channel:
 								script_lines.append(f'class change dev {iface_dr} parent 1: classid 1:{j+1} htb rate {rate:f}mbit')
 								self._applied_rates[(n, j)] = rate
 
+				# OLSR topology sync: update iptables when LOS state changes.
+				# Collect commands here; apply after the full matrix scan so we
+				# don't fork iptables inside the inner loop.
+				if EMU and old_matrix[n][j] != delay and n < j:
+					olsr_cmds += self._sync_olsr_pair(n, j, delay, node_list)
+
 				self._delay_matrix[n][j] = delay
 
 		if EMU and script_lines:
 			self._batch_update_netem(script_lines)
+		if EMU and olsr_cmds:
+			self._run_iptables_cmds(olsr_cmds)
 
 	def _write_positions(self, node_cache):
 		'''Write current node positions for the per-node position API.
@@ -265,6 +285,196 @@ class channel:
 		else:
 			return self._GroundBase2GroundBase()
 
+	# ── OLSR topology sync ───────────────────────────────────────────────────
+	# Runs iptables rules INSIDE each Docker container (via docker exec).
+	# OLSR uses 255.255.255.255 broadcasts, which carry a specific source IP,
+	# so `iptables -A INPUT -s <peer_ip> -p udp --dport 698 -j DROP` inside
+	# the container is sufficient — no br_netfilter/PHYSDEV required.
+	# Each container gets a dedicated VSNES_OLSR chain jumped from INPUT so
+	# cleanup is a single flush rather than per-rule delete.
+
+	def init_olsr_rules(self, node_list, nNodes):
+		'''Create the VSNES_OLSR chain inside every Docker container and install
+		initial DROP rules for all no-LOS pairs. Called by write_bash().'''
+		self._olsr_blocked_pairs = set()
+		self._olsr_node_list = node_list
+		self._olsr_nNodes    = nNodes
+
+		# Set up the VSNES_OLSR chain in every Docker container.
+		for node in node_list:
+			if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
+				continue
+			name = node.name
+			# -N may fail if chain already exists; -F clears stale rules.
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-N', OLSR_CHAIN],
+						   capture_output=True)
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-F', OLSR_CHAIN],
+						   capture_output=True)
+			# Idempotent jump from INPUT.
+			r = subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+								'-C', 'INPUT', '-p', 'udp', '--dport', '698',
+								'-j', OLSR_CHAIN], capture_output=True)
+			if r.returncode != 0:
+				subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+								'-I', 'INPUT', '1',
+								'-p', 'udp', '--dport', '698',
+								'-j', OLSR_CHAIN], capture_output=True)
+
+		# Add DROP rules for all initially no-LOS pairs.
+		cmds = []
+		for n in range(nNodes):
+			for j in range(n + 1, nNodes):
+				delay = self._delay_matrix[n][j]
+				if delay == -2:
+					continue
+				if delay < 0:
+					cmds += self._olsr_pair_cmds('-A', n, j, node_list)
+		self._run_iptables_cmds(cmds)
+		self._olsr_enabled = True
+		logging.info(f"OLSR topology sync enabled; {len(self._olsr_blocked_pairs)} pairs initially blocked")
+		self._start_olsr_event_watcher()
+
+	def cleanup_olsr_rules(self):
+		'''Flush and remove the VSNES_OLSR chain from every container. Safe to
+		call even if init_olsr_rules() was never called.'''
+		if not self._olsr_enabled:
+			return
+		self._olsr_enabled = False  # signal watcher thread to stop
+		proc = getattr(self, '_olsr_watcher_proc', None)
+		if proc:
+			try:
+				proc.terminate()
+			except Exception:
+				pass
+		node_list = getattr(self, '_olsr_node_list', [])
+		for node in node_list:
+			if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
+				continue
+			name = node.name
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+							'-D', 'INPUT', '-p', 'udp', '--dport', '698',
+							'-j', OLSR_CHAIN], capture_output=True)
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+							'-F', OLSR_CHAIN], capture_output=True)
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+							'-X', OLSR_CHAIN], capture_output=True)
+		self._olsr_blocked_pairs = set()
+		logging.info("OLSR topology sync disabled; chains removed from containers")
+
+	def _olsr_pair_cmds(self, action, n, j, node_list):
+		'''Return docker-exec iptables commands for one (n, j) pair.
+		action is "-A" (block) or "-D" (unblock).
+		Inside each container, drop OLSR INPUT from the peer's IP.
+		OLSR broadcasts still carry a unique source IP, so src matching works.'''
+		node_n = node_list[n]
+		node_j = node_list[j]
+		ip_n = getattr(node_n, 'ip_ext', None)
+		ip_j = getattr(node_j, 'ip_ext', None)
+		if not (ip_n and ip_j):
+			return []
+		pair = frozenset((n, j))
+		cmds = [
+			# Inside SAT-n: drop hellos arriving from SAT-j
+			['docker', 'exec', node_n.name, OLSR_IPTABLES,
+			 action, OLSR_CHAIN, '-s', ip_j, '-j', 'DROP'],
+			# Inside SAT-j: drop hellos arriving from SAT-n
+			['docker', 'exec', node_j.name, OLSR_IPTABLES,
+			 action, OLSR_CHAIN, '-s', ip_n, '-j', 'DROP'],
+		]
+		if action == '-A':
+			self._olsr_blocked_pairs.add(pair)
+		else:
+			self._olsr_blocked_pairs.discard(pair)
+		return cmds
+
+	def _sync_olsr_pair(self, n, j, new_delay, node_list):
+		'''Return commands needed to reflect the new delay for (n,j).
+		Only returns commands when the pair crosses the LOS/no-LOS boundary.'''
+		if not self._olsr_enabled:
+			return []
+		if self._delay_matrix[n][j] == -2:
+			return []  # pair not defined — skip
+		pair = frozenset((n, j))
+		should_block = new_delay < 0
+		is_blocked   = pair in self._olsr_blocked_pairs
+		if should_block == is_blocked:
+			return []
+		action = '-A' if should_block else '-D'
+		return self._olsr_pair_cmds(action, n, j, node_list)
+
+	def _run_iptables_cmds(self, cmds):
+		'''Execute a list of docker-exec iptables argv lists.
+		Errors are logged at DEBUG level and are non-fatal (-D on a missing
+		rule returns 1 but must not abort the simulation tick).'''
+		for cmd in cmds:
+			r = subprocess.run(cmd, capture_output=True, text=True)
+			if r.returncode != 0:
+				logging.debug(f"olsr-sync: {' '.join(cmd[3:])}: {r.stderr.strip()}")
+
+	def _reinit_container_olsr(self, n, node, node_list):
+		'''Re-install the VSNES_OLSR chain and all current block rules for a
+		single container. Called automatically when a container restart is
+		detected by the event watcher.'''
+		name = node.name
+		if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
+			return
+		subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-N', OLSR_CHAIN],
+					   capture_output=True)
+		subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-F', OLSR_CHAIN],
+					   capture_output=True)
+		r = subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+							'-C', 'INPUT', '-p', 'udp', '--dport', '698',
+							'-j', OLSR_CHAIN], capture_output=True)
+		if r.returncode != 0:
+			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
+							'-I', 'INPUT', '1',
+							'-p', 'udp', '--dport', '698',
+							'-j', OLSR_CHAIN], capture_output=True)
+		cmds = []
+		for j, peer in enumerate(node_list):
+			if j == n:
+				continue
+			if frozenset((n, j)) in self._olsr_blocked_pairs:
+				ip_peer = getattr(peer, 'ip_ext', None)
+				if ip_peer:
+					cmds.append(['docker', 'exec', name, OLSR_IPTABLES,
+								 '-A', OLSR_CHAIN, '-s', ip_peer, '-j', 'DROP'])
+		self._run_iptables_cmds(cmds)
+		logging.info(f"OLSR: {name} restarted — rules restored ({len(cmds)} block(s))")
+
+	def _start_olsr_event_watcher(self):
+		'''Spawn a daemon thread that watches `docker events` for container
+		start events. When a managed container restarts, its VSNES_OLSR chain
+		is re-applied automatically so the topology is never stale.'''
+		def _watch():
+			proc = subprocess.Popen(
+				['docker', 'events',
+				 '--filter', 'type=container',
+				 '--filter', 'event=start',
+				 '--format', '{{.Actor.Attributes.name}}'],
+				stdout=subprocess.PIPE, text=True
+			)
+			self._olsr_watcher_proc = proc
+			try:
+				for line in proc.stdout:
+					if not self._olsr_enabled:
+						break
+					name = line.strip()
+					node_list = getattr(self, '_olsr_node_list', [])
+					for i, node in enumerate(node_list):
+						if node.name == name and node._is_docker_container():
+							self._reinit_container_olsr(i, node, node_list)
+							break
+			except Exception as exc:
+				if self._olsr_enabled:
+					logging.warning(f"OLSR event watcher: {exc}")
+
+		t = threading.Thread(target=_watch, daemon=True, name='olsr-event-watcher')
+		t.start()
+		self._olsr_watcher_thread = t
+
+	# ─────────────────────────────────────────────────────────────────────────
+
 	def _batch_update_netem(self, script_lines):
 		'''Apply all tc changes of this tick in a single `tc -batch` call.
 		-force keeps applying the remaining commands if one fails (a single
@@ -289,6 +499,7 @@ class channel:
 		return channels
 
 	def delete(self):
+		self.cleanup_olsr_rules()
 		self._delay_matrix = []
 		self._exist_channel = False
 		self._delays = None

@@ -269,6 +269,8 @@ class scenario:
 
 					tc_down.append(f'qdisc del dev {veth} ingress')
 					ip_down.append(f'link del {ifb}')
+					# Cache veth so OLSR topology sync can reference it
+					node._veth_iface = veth
 
 				# Phase 2: HTB classes + netem + u32 dst-IP filters per (source, dest) pair
 				for n, node in docker_vm_nodes:
@@ -315,6 +317,9 @@ class scenario:
 				w_runtime.write('sudo tc -force -batch tc_setup.batch\n')
 				w_shutdown.write('sudo tc -force -batch tc_teardown.batch 2>/dev/null\n')
 				w_shutdown.write('sudo ip -force -batch ip_teardown.batch 2>/dev/null\n')
+
+				# Install initial OLSR topology iptables rules (blocks no-LOS pairs).
+				self._channel.init_olsr_rules(self._node_list, self._nNodes)
 
 			# ── Classic VM mode (VLAN subinterfaces + iptables MARK) ─────────────
 			if classic_vm_nodes:
@@ -390,6 +395,7 @@ class scenario:
 	
 	def _run_shutdown(self, password=None):
 		"""Run shutdown_bash.sh and reset state. Safe to call from any thread."""
+		self._channel.cleanup_olsr_rules()
 		if os.path.isfile('./shutdown_bash.sh'):
 			logging.info("Executing shutdown bash script")
 			if password:
