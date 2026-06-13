@@ -149,6 +149,18 @@
     <!-- Notification Container -->
     <div id="notificationContainer" class="notification-container"></div>
 
+    <!-- Node Info Panel (custom replacement for Cesium infoBox) -->
+    <div id="nodeInfoPanel" class="node-info-panel hidden">
+        <div class="control-panel-header">
+            <h2 class="control-panel-title" id="nodeInfoTitle">Node</h2>
+            <button id="nodeInfoClose" class="btn-close btn-icon" aria-label="Close panel">
+                <img src="{{ url_for('static', filename= 'assets/images/icons/close.png') }}" alt="Close">
+            </button>
+        </div>
+        <div class="control-panel-section" id="nodeInfoBody"></div>
+        <button id="nodeKillBtn" class="btn btn-danger">Kill</button>
+    </div>
+
     <!-- Configuration Floating Window -->
     <div id="configWindow" class="floating-window">
         <div class="floating-window-header">

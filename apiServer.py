@@ -368,6 +368,45 @@ def stop_all_vms():
         return jsonify({'error': 'Failed to stop VMs'}), 500
 
 
+def _set_node_killed(node_name, killed):
+    """Force-remove (or restore) a node in the live channel matrix. Returns
+    (payload, http_code)."""
+    scenario = global_state['scenario']
+    if scenario is None:
+        return {'error': 'No scenario initialized'}, 400
+    channel = getattr(scenario, '_channel', None)
+    if channel is None:
+        return {'error': 'Scenario has no channel matrix'}, 400
+    names = {n.name for n in getattr(scenario, '_node_list', [])}
+    if node_name not in names:
+        return {'error': f'Node {node_name} not found'}, 404
+    if killed:
+        channel.kill_node(node_name)
+    else:
+        channel.revive_node(node_name)
+    return {
+        'message': f"Node {node_name} {'killed' if killed else 'revived'}",
+        'node': node_name,
+        'killed': killed,
+        'killed_nodes': sorted(channel._killed),
+    }, 200
+
+
+@app.route('/api/node/<node_name>/kill', methods=['POST'])
+def kill_node(node_name):
+    """Logically remove a node from the matrix: all its links go to 100% loss
+    on the next tick, every other pair keeps working. Reversible via revive."""
+    result, code = _set_node_killed(node_name, True)
+    return jsonify(result), code
+
+
+@app.route('/api/node/<node_name>/revive', methods=['POST'])
+def revive_node(node_name):
+    """Undo a kill: the node's real link delays resume on the next tick."""
+    result, code = _set_node_killed(node_name, False)
+    return jsonify(result), code
+
+
 @app.route('/api/compose/up', methods=['POST'])
 def compose_up():
     """Start the Docker node containers (docker compose up -d).
@@ -540,6 +579,8 @@ def api_help():
             'DELETE /api/delete-all-vms': 'Delete all VMs',
             'POST /api/stop-vm/<name>': 'Stop specific VM',
             'POST /api/stop-all-vms': 'Stop all VMs',
+            'POST /api/node/<name>/kill': 'Remove a node from the matrix (its links -> 100% loss)',
+            'POST /api/node/<name>/revive': 'Restore a killed node',
             'POST /api/compose/up': 'Start Docker node containers (optional JSON {"services": [...]})',
             'POST /api/compose/down': 'Stop and remove Docker node containers',
             'POST /api/simulation/start': 'Start emulation and visualization',

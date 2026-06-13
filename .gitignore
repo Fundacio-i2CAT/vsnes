@@ -7,3 +7,10 @@ Class/templates/ScenarioCZML.czml
 runtime_bash.sh
 shutdown_bash.sh
 .planning/
+ip_setup.batch
+ip_teardown.batch
+tc_setup.batch
+tc_teardown.batch
+Class/templates/ScenarioCZML.czml
+Class/templates/ScenarioCZML.czml.tmp
+simulation_time.txt

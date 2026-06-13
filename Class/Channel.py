@@ -49,6 +49,21 @@ class channel:
 		# Last Data_rate applied per directed pair (set by write_bash at startup,
 		# diffed at runtime to support dynamic rate changes).
 		self._applied_rates = {}
+		# Names of nodes "killed" from the GUI. Every link touching a killed node
+		# is forced to 100% loss next tick (the node is logically removed from the
+		# matrix) while all other pairs keep working. Reversible via revive_node().
+		self._killed = set()
+
+	def kill_node(self, name):
+		'''Logically remove a node: force all its links to 100% loss. Reversible.'''
+		self._killed.add(name)
+
+	def revive_node(self, name):
+		'''Undo kill_node(): the node's real link delays resume next tick.'''
+		self._killed.discard(name)
+
+	def is_killed(self, name):
+		return name in self._killed
 
 	def AddNode(self, node_list, nNodes, marker):
 		'''Add a new row and a new column to the matrix with one new node'''
@@ -160,6 +175,13 @@ class channel:
 					delay = self._calculate_delay_from_cache(node_n_data, node_cache[j])
 				else:
 					continue
+
+				# Killed nodes: force every link touching them to 100% loss so the
+				# node is effectively removed from the matrix, leaving all other
+				# pairs untouched. The diff logic below emits the netem change on
+				# the kill tick and restores the real delay on revive.
+				if self._killed and (node_n_data['name'] in self._killed or node_cache[j]['name'] in self._killed):
+					delay = -1
 
 				if delay > -1 and not self._exist_channel:
 					self._exist_channel = True

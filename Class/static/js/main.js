@@ -12,6 +12,7 @@ let viewer;                 // set in initializeCesium()
 let czml;                   // CZML datasource
 let satObjects = [];      // { entity, rec } pairs
 let satrecs = [];      // parsed TLE records
+let killedNodes = new Set();   // names of nodes killed from the GUI
 
 
 /* -------------------------------------------------------------
@@ -75,6 +76,7 @@ function initializeCesium() {
         terrainProvider: Cesium.createWorldTerrain(),
         shouldAnimate: false,
         baseLayerPicker: false,
+        infoBox: false,            // replaced by our custom #nodeInfoPanel
         skyBox: false,
         skyAtmosphere: false,
         contextOptions: {
@@ -187,6 +189,145 @@ function setupEventListeners() {
         });
     });
 
+    setupNodeInfoPanel();
+}
+
+/* -------------------------------------------------------------
+   NODE INFO PANEL  (custom replacement for Cesium's infoBox)
+   Selecting a node opens a left-side panel showing its details
+   plus a "Kill / Revive" button. Killing removes the node from
+   the live channel matrix (its links -> 100% loss) and recolors
+   the node and all its links red, leaving every other pair
+   untouched. The default Cesium infoBox is disabled (infoBox:false)
+   because its sandboxed iframe can't host an interactive button.
+----------------------------------------------------------------*/
+function czmlEntities() {
+    return (czml && czml.entities && czml.entities.values) ? czml.entities.values : [];
+}
+
+// A node packet has an id without the "-to-" link separator and carries a
+// billboard or point (the document packet and polylines are excluded).
+function isNodeEntity(entity) {
+    return !!entity && typeof entity.id === 'string'
+        && entity.id !== 'document'
+        && entity.id.indexOf('-to-') === -1
+        && (entity.billboard || entity.point);
+}
+
+// Exact-segment match so "SAT-1" does not match "SAT-12-to-..." links.
+function linkTouchesNode(id, name) {
+    if (typeof id !== 'string') return false;
+    const i = id.indexOf('-to-');
+    if (i === -1) return false;
+    return id.slice(0, i) === name || id.slice(i + 4) === name;
+}
+
+const RED = Cesium.Color.RED;
+const LINK_GREEN = Cesium.Color.fromBytes(0, 255, 0, 255);
+
+function applyKillStyle(name) {
+    czmlEntities().forEach(e => {
+        if (e.id === name && e.billboard) {
+            e.billboard.color = new Cesium.ConstantProperty(RED);
+        } else if (e.polyline && linkTouchesNode(e.id, name)) {
+            e.polyline.material = new Cesium.ColorMaterialProperty(RED);
+        }
+    });
+}
+
+function clearKillStyle(name) {
+    czmlEntities().forEach(e => {
+        if (e.id === name && e.billboard) {
+            e.billboard.color = new Cesium.ConstantProperty(Cesium.Color.WHITE);
+        } else if (e.polyline && linkTouchesNode(e.id, name)) {
+            e.polyline.material = new Cesium.ColorMaterialProperty(LINK_GREEN);
+        }
+    });
+}
+
+// Re-apply red styling to every killed node after a CZML reload (the reload
+// rebuilds the datasource with default colors).
+function reapplyKilledStyles() {
+    killedNodes.forEach(name => applyKillStyle(name));
+}
+
+async function toggleNodeKill(name) {
+    const killed = killedNodes.has(name);
+    const action = killed ? 'revive' : 'kill';
+    const res = await fetch(
+        `${API_BASE_URL}/api/node/${encodeURIComponent(name)}/${action}`,
+        { method: 'POST' });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to ${action} node`);
+    }
+    if (killed) {
+        killedNodes.delete(name);
+        clearKillStyle(name);
+    } else {
+        killedNodes.add(name);
+        applyKillStyle(name);
+    }
+    showNotification(`${name} ${killed ? 'revived' : 'killed'}`, 'success');
+}
+
+function setupNodeInfoPanel() {
+    const panel = document.getElementById('nodeInfoPanel');
+    if (!panel) return;
+    const titleEl = document.getElementById('nodeInfoTitle');
+    const bodyEl = document.getElementById('nodeInfoBody');
+    const killBtn = document.getElementById('nodeKillBtn');
+    const closeBtn = document.getElementById('nodeInfoClose');
+
+    let currentNode = null;
+
+    function refreshKillBtn() {
+        const killed = killedNodes.has(currentNode);
+        killBtn.textContent = (killed ? 'Revive ' : 'Kill ') + currentNode;
+        killBtn.classList.toggle('btn-danger', !killed);
+        killBtn.classList.toggle('btn-success', killed);
+    }
+
+    function showFor(entity) {
+        currentNode = entity.id;
+        titleEl.textContent = entity.name || entity.id;
+        let html = '';
+        if (entity.description) {
+            try { html = entity.description.getValue(viewer.clock.currentTime) || ''; }
+            catch (e) { html = ''; }
+        }
+        bodyEl.innerHTML = html || '<p>No additional information.</p>';
+        refreshKillBtn();
+        panel.classList.remove('hidden');
+    }
+
+    function hide() {
+        panel.classList.add('hidden');
+        currentNode = null;
+        if (viewer.selectedEntity) viewer.selectedEntity = undefined;
+    }
+
+    viewer.selectedEntityChanged.addEventListener(() => {
+        const entity = viewer.selectedEntity;
+        if (isNodeEntity(entity)) showFor(entity);
+        else hide();
+    });
+
+    closeBtn.addEventListener('click', hide);
+
+    killBtn.addEventListener('click', async () => {
+        if (!currentNode) return;
+        killBtn.disabled = true;
+        try {
+            await toggleNodeKill(currentNode);
+            refreshKillBtn();
+        } catch (e) {
+            console.error('Kill/revive failed:', e);
+            showNotification(e.message, 'error');
+        } finally {
+            killBtn.disabled = false;
+        }
+    });
 }
 
 /* -------------------------------------------------------------
@@ -635,6 +776,8 @@ function Reload() {
         .then(ds => {
             czml = ds;
             viewer.dataSources.add(czml);
+            // Re-apply red styling for any nodes killed before this reload
+            reapplyKilledStyles();
             // Sync clock from CZML document packet (tolerant: no snap-back)
             if (ds.clock) {
                 syncClockTolerant(ds.clock.currentTime, ds.clock.multiplier || 60);

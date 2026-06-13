@@ -92,6 +92,44 @@ p {
   opacity: 0;
 }
 
+/* Node info panel — custom infoBox replacement, anchored opposite the
+   control panel (left side) and reusing the control-panel inner styles. */
+.node-info-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background-color: rgba(24, 31, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  width: 340px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
+}
+
+.node-info-panel.hidden {
+  transform: translateX(calc(-100% - 24px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.node-info-panel .control-panel-section {
+  font-size: 13px;
+  word-break: break-word;          /* TLE lines are long */
+}
+
+.node-info-panel .control-panel-section h2,
+.node-info-panel .control-panel-section h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.node-info-panel .control-panel-section p { margin: 4px 0; }
+
 .control-panel-header {
   display: flex;
   justify-content: space-between;
