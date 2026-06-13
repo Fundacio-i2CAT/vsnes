@@ -7,12 +7,9 @@ from Class.Channel import channel
 from skyfield.api import load
 from ipaddress import IPv4Network,AddressValueError
 from czml import czml
-import toml
 import time
 import subprocess
-import webbrowser
 import threading
-from multiprocessing import Process
 import sys
 import os
 import logging
@@ -148,7 +145,6 @@ class scenario:
 				self.czml_doc.loads(example.read())
 		
 		logging.info(f"Scenario initialization complete with {self._nNodes} nodes")
-		#print(toml.dumps(TOMLfile))
 	def AddSatellite(self,sat_tle,constallation):
 		#Creates a Satellite object and add to the scenario
 		try:
@@ -249,6 +245,8 @@ class scenario:
 			if docker_vm_nodes:
 				n_ifbs = len(docker_vm_nodes)
 				ip_up, tc_up, ip_down, tc_down = [], [], [], []
+				logging.info(f"Configuring network emulation for {n_ifbs} Docker nodes "
+				             f"(discovering interfaces, this may take a few minutes)...")
 
 				# Phase 1: create IFB + redirect each container's outgoing traffic into it
 				for n, node in docker_vm_nodes:
@@ -272,7 +270,20 @@ class scenario:
 					# Cache veth so OLSR topology sync can reference it
 					node._veth_iface = veth
 
-				# Phase 2: HTB classes + netem + u32 dst-IP filters per (source, dest) pair
+				# Collect MAC addresses once so Phase 2 can match on L2 next-hop (dst MAC).
+				# Filtering by MAC rather than dst IP lets OLSRd multi-hop routing work:
+				# a packet routed via an intermediate node has that node's MAC as dst,
+				# so it hits the correct per-hop netem class rather than the no-LOS class.
+				logging.info("Discovering container MAC addresses for traffic shaping...")
+				node_macs = {}  # node_list index → 'aa:bb:cc:dd:ee:ff'
+				for _idx, _nd in enumerate(self._node_list):
+					if getattr(_nd, 'ip_ext', None) and _nd._is_docker_container():
+						_mac = _nd.get_docker_mac()
+						if _mac:
+							node_macs[_idx] = _mac
+
+				# Phase 2: HTB classes + netem + flower dst-MAC filters per (source, dest) pair
+				logging.info("Generating tc/netem shaping rules...")
 				for n, node in docker_vm_nodes:
 					if not getattr(node, '_ifb_iface', None):
 						continue
@@ -296,12 +307,22 @@ class scenario:
 							except (TypeError, KeyError):
 								losses, burst = '0%', '0%'
 							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem delay {delay:.3f}ms loss {losses} {burst}')
-						# u32 filters by destination IP (no iptables MARK needed):
-						# both the emulated address (10.0.0.j, shown in the GUI) and
-						# the management address map to the same shaped class.
-						emu_ip = str(getattr(dest_node, '_ip', '') or '')
-						for dip in dict.fromkeys(filter(None, (emu_ip, dest_ip))):
-							tc_up.append(f'filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}')
+						# Filter by Ethernet destination MAC (L2 next-hop) rather than
+						# IP destination.  This allows OLSRd multi-hop routing: when SAT-n
+						# routes to a no-LOS peer via an intermediate node, the frame's
+						# dst MAC is the intermediate node's MAC — hitting its per-hop netem
+						# class instead of the no-LOS loss-100% class.
+						dest_mac = node_macs.get(j - 1)
+						if dest_mac:
+							tc_up.append(
+								f'filter add dev {ifb} parent 1:0 protocol all prio 1 '
+								f'flower dst_mac {dest_mac} classid 1:{j}'
+							)
+						else:
+							# Fallback for non-Docker nodes: IP destination filter (no multi-hop).
+							emu_ip = str(getattr(dest_node, '_ip', '') or '')
+							for dip in dict.fromkeys(filter(None, (emu_ip, dest_ip))):
+								tc_up.append(f'filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}')
 
 				with open('ip_setup.batch', 'w') as f:
 					f.write('\n'.join(ip_up) + '\n')
@@ -319,6 +340,8 @@ class scenario:
 				w_shutdown.write('sudo ip -force -batch ip_teardown.batch 2>/dev/null\n')
 
 				# Install initial OLSR topology iptables rules (blocks no-LOS pairs).
+				logging.info("Applying OLSR topology rules inside containers "
+				             "(iptables per no-LOS pair)...")
 				self._channel.init_olsr_rules(self._node_list, self._nNodes)
 
 			# ── Classic VM mode (VLAN subinterfaces + iptables MARK) ─────────────
@@ -462,11 +485,11 @@ class scenario:
 
 		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 		logging.info(f"Starting emulation process with {n_connections} connections")
-		self._emulator_process = threading.Thread(target=self._run, args=(EMU, True, n_connections, password), daemon=True)
+		self._emulator_process = threading.Thread(target=self._run, args=(EMU, password), daemon=True)
 		self._emulator_process.start()
 
 
-	def _run(self, EMU, CESIUM, n_connections, password=None):
+	def _run(self, EMU, password=None):
 
 		if EMU:
 			logging.info("Executing runtime bash script")
@@ -479,7 +502,6 @@ class scenario:
 
 		time.sleep(5)
 
-		n_connections = int(1+(self._nNodes-1)*self._nNodes/2)
 		self._emit_sim_block()
 		time.sleep(self._time_parameters.get_TimeInterval()/self.get_speed())
 		Nversion = 1

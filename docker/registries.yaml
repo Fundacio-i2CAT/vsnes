@@ -1,0 +1,25 @@
+# k3s mirror configuration — /etc/rancher/k3s/registries.yaml
+#
+# All pulls from the public registries below are transparently redirected to
+# the vsnes-registry container at 172.27.12.200:5000. Images must be
+# pre-pushed there with their original path preserved (see populate-registry.sh).
+# k3s reads this file at startup; a restart is required after changes.
+
+mirrors:
+  "docker.io":
+    endpoint:
+      - "http://172.27.12.200:5000"
+  "registry.k8s.io":
+    endpoint:
+      - "http://172.27.12.200:5000"
+  "ghcr.io":
+    endpoint:
+      - "http://172.27.12.200:5000"
+  "quay.io":
+    endpoint:
+      - "http://172.27.12.200:5000"
+
+configs:
+  "172.27.12.200:5000":
+    tls:
+      insecure_skip_verify: true

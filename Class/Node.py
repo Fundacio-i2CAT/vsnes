@@ -4,7 +4,6 @@ import paramiko
 import time
 import sys
 import logging
-import os
 import socket
 
 
@@ -114,26 +113,29 @@ class Node:
 		if self._name is not None:
 				return self._name
 
-	def get_name(self):
-		return f'{self._name}'				
-
 	def get_basic_data(self):
 			return f'{self._name} (ip:{self._ip})'
 
-	def _get_VM_ip(self, max_retries=240):
-		# Search the ip of the VM associated to the node and return it.
-		# Retries while DHCP has not assigned an address yet (up to ~2 min).
-		if self.is_external_vm:
-			return self.ip_ext
+	def _virsh_domifaddr_field(self, field_index, what, max_retries=240):
+		# `virsh domifaddr` prints a 2-line header then the interface row; the
+		# row's fields are: Name MAC Protocol Address. Poll while libvirt/DHCP
+		# is still bringing the VM up (up to ~2 min). field_index selects the
+		# column (0 = interface name, 3 = address/CIDR).
 		for _ in range(max_retries):
 			try:
-				#The command returns two lines, a legend and the VM information
 				cmd = f'virsh domifaddr {self._name}'
-				return subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[3][:-3]
+				out = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
+				return out.split('\n')[2].split()[field_index]
 			except IndexError:
-				# Small sleep to prevent 100% CPU usage loop
-				time.sleep(0.5)
-		raise TimeoutError(f"Could not obtain IP address for VM '{self._name}' after {max_retries} attempts")
+				time.sleep(0.5)  # not ready yet; avoid a busy loop
+		raise TimeoutError(f"Could not obtain {what} for VM '{self._name}' after {max_retries} attempts")
+
+	def _get_VM_ip(self, max_retries=240):
+		# Search the ip of the VM associated to the node and return it.
+		if self.is_external_vm:
+			return self.ip_ext
+		# Strip the trailing CIDR suffix (e.g. '/24') from the address field.
+		return self._virsh_domifaddr_field(3, 'IP address', max_retries)[:-3]
 
 	def _is_docker_container(self):
 		"""Return True if this external-VM node is a local Docker container.
@@ -166,19 +168,25 @@ class Node:
 			logging.error(f'get_docker_veth {self._name}: {e}')
 		return None
 
+	def get_docker_mac(self):
+		"""Return the eth0 MAC address of this Docker container (aa:bb:cc:dd:ee:ff)."""
+		try:
+			r = subprocess.run(
+				['docker', 'exec', self._name, 'cat', '/sys/class/net/eth0/address'],
+				capture_output=True, text=True, timeout=5)
+			if r.returncode == 0:
+				return r.stdout.strip()
+		except Exception as e:
+			logging.error(f'get_docker_mac {self._name}: {e}')
+		return None
+
 	def _get_Host_interface(self, max_retries=240):
 		# For Docker containers return the IFB name cached by write_bash(); for
 		# external VMs return the configured interface; for internal VMs poll virsh.
 		if self.is_external_vm:
 			ifb = getattr(self, '_ifb_iface', None)
 			return ifb if ifb else self._VM_interface
-		for _ in range(max_retries):
-			try:
-				cmd = f'virsh domifaddr {self._name}'
-				return subprocess.run(cmd, capture_output = True, text = True, shell = True).stdout.split('\n')[2].split()[0]
-			except IndexError:
-				time.sleep(0.5)
-		raise TimeoutError(f"Could not obtain host interface for VM '{self._name}' after {max_retries} attempts")
+		return self._virsh_domifaddr_field(0, 'host interface', max_retries)
 
 	def _initial_configuration (self, nNodes):
 		# Sends configuration commands with ssh to the VM for change de username and defines the VLAN interface

@@ -1,6 +1,12 @@
 services:
   satellite-1:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-1
     hostname: SAT-1
     cap_add:
@@ -21,6 +27,12 @@ services:
 
   satellite-2:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-2
     hostname: SAT-2
     cap_add:
@@ -41,6 +53,12 @@ services:
 
   satellite-3:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-3
     hostname: SAT-3
     cap_add:
@@ -61,6 +79,12 @@ services:
 
   satellite-4:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-4
     hostname: SAT-4
     cap_add:
@@ -81,12 +105,23 @@ services:
 
   satellite-5:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-5
     hostname: SAT-5
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-5:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -96,12 +131,23 @@ services:
 
   satellite-6:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-6
     hostname: SAT-6
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-6:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -111,12 +157,23 @@ services:
 
   satellite-7:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-7
     hostname: SAT-7
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-7:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -126,12 +183,23 @@ services:
 
   satellite-8:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-8
     hostname: SAT-8
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-8:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -141,12 +209,23 @@ services:
 
   satellite-9:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-9
     hostname: SAT-9
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-9:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -156,12 +235,23 @@ services:
 
   satellite-10:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-10
     hostname: SAT-10
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-10:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -171,12 +261,23 @@ services:
 
   satellite-11:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-11
     hostname: SAT-11
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-11:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -186,12 +287,23 @@ services:
 
   satellite-12:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: SAT-12
     hostname: SAT-12
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-12:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -199,16 +311,25 @@ services:
         ipv4_address: 172.27.12.112
     restart: unless-stopped
 
-  
-
   ibi_es:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: Ibi_ES
     hostname: Ibi_ES
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-ibi:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -218,12 +339,23 @@ services:
 
   foggia_it:
     build: ./docker
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     container_name: Foggia_IT
     hostname: Foggia_IT
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - k3s-data-foggia:/var/lib/rancher/k3s
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
@@ -231,16 +363,48 @@ services:
         ipv4_address: 172.27.12.202
     restart: unless-stopped
 
+  # Shared OCI registry — all satellites pull from here (airgap / fast pull)
+  # Reachable inside the vsnes_net at 172.27.12.200:5000
+  # and from the WSL/host at localhost:5000 via the port mapping below.
+  registry:
+    image: registry:2
+    container_name: vsnes-registry
+    ports:
+      - "5001:5000"
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - registry-data:/var/lib/registry
+    networks:
+      vsnes:
+        ipv4_address: 172.27.12.200
+    restart: unless-stopped
+
 volumes:
   k3s-data-1:
   k3s-data-2:
   k3s-data-3:
   k3s-data-4:
+  k3s-data-5:
+  k3s-data-6:
+  k3s-data-7:
+  k3s-data-8:
+  k3s-data-9:
+  k3s-data-10:
+  k3s-data-11:
+  k3s-data-12:
+  k3s-data-ibi:
+  k3s-data-foggia:
+  registry-data:
 
 networks:
   vsnes:
     name: vsnes_net
     driver: bridge
+    # IPv6 link-local is required by babeld's wire protocol (it carries IPv4
+    # routes but peers over fe80::). The ULA subnet is unused by the IPv4 sim/tc.
+    enable_ipv6: true
     ipam:
       config:
         - subnet: 172.27.12.0/24
+        - subnet: fd00:c0de:12::/64

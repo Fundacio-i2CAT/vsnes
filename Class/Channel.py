@@ -6,7 +6,6 @@ from Class.Satellite import Satellite
 from czml import czml
 import numpy as np
 import json
-from enum import IntEnum
 
 # GLOBAL CONSTANTS
 a_Earth = 6371000.0			 # Earth major semi axis [m]
@@ -24,11 +23,6 @@ OLSR_CHAIN    = 'VSNES_OLSR'
 # backend) inside containers for OLSR filtering.
 OLSR_IPTABLES = 'iptables-legacy'
 POSITIONS_FILE = 'Positions/nodes.json'
-
-class ChannelState(IntEnum):
-	NO_LOS = -1
-	DIAGONAL = -2
-	VALID = 0
 
 class channel:
 	'''A channel object defines the delays between nodes'''
@@ -200,11 +194,7 @@ class channel:
 
 				# Traffic Control Logic: only emit a command when the value changed
 				if EMU and old_matrix[n][j] != delay and n != j:
-					if node_n_data['is_docker']:
-						# IFB name already encodes the node index (e.g. ifb2)
-						interface = node_n_data['interface_base']
-					else:
-						interface = f"{node_n_data['interface_base']}.{n+1}"
+					interface = self._tc_iface(node_n_data, n)
 					class_id = f"1:{j+1}"
 					handle_id = f"1{j+1}:"
 
@@ -230,10 +220,7 @@ class channel:
 							if applied is None:
 								self._applied_rates[(n, j)] = rate
 							elif applied != rate:
-								if node_n_data['is_docker']:
-									iface_dr = node_n_data['interface_base']
-								else:
-									iface_dr = f"{node_n_data['interface_base']}.{n+1}"
+								iface_dr = self._tc_iface(node_n_data, n)
 								script_lines.append(f'class change dev {iface_dr} parent 1: classid 1:{j+1} htb rate {rate:f}mbit')
 								self._applied_rates[(n, j)] = rate
 
@@ -249,6 +236,14 @@ class channel:
 			self._batch_update_netem(script_lines)
 		if EMU and olsr_cmds:
 			self._run_iptables_cmds(olsr_cmds)
+
+	@staticmethod
+	def _tc_iface(node_data, n):
+		'''Resolve the host tc interface for a node. Docker containers shape on
+		a pre-named IFB device (ifb<N>, already in interface_base); classic VMs
+		shape on the VLAN sub-interface eth0.<n+1>.'''
+		base = node_data['interface_base']
+		return base if node_data['is_docker'] else f"{base}.{n+1}"
 
 	def _write_positions(self, node_cache):
 		'''Write current node positions for the per-node position API.
@@ -298,27 +293,16 @@ class channel:
 		initial DROP rules for all no-LOS pairs. Called by write_bash().'''
 		self._olsr_blocked_pairs = set()
 		self._olsr_node_list = node_list
-		self._olsr_nNodes    = nNodes
 
 		# Set up the VSNES_OLSR chain in every Docker container.
-		for node in node_list:
-			if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
-				continue
-			name = node.name
-			# -N may fail if chain already exists; -F clears stale rules.
-			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-N', OLSR_CHAIN],
-						   capture_output=True)
-			subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-F', OLSR_CHAIN],
-						   capture_output=True)
-			# Idempotent jump from INPUT.
-			r = subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
-								'-C', 'INPUT', '-p', 'udp', '--dport', '698',
-								'-j', OLSR_CHAIN], capture_output=True)
-			if r.returncode != 0:
-				subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
-								'-I', 'INPUT', '1',
-								'-p', 'udp', '--dport', '698',
-								'-j', OLSR_CHAIN], capture_output=True)
+		docker_nodes = [nd for nd in node_list
+		                if getattr(nd, 'ip_ext', None) and nd._is_docker_container()]
+		total = len(docker_nodes)
+		logging.info(f"OLSR: setting up firewall chain in {total} containers...")
+		for idx, node in enumerate(docker_nodes, 1):
+			if idx == 1 or idx % 5 == 0 or idx == total:
+				logging.info(f"OLSR: chain setup {idx}/{total} ({node.name})")
+			self._ensure_olsr_chain(node.name)
 
 		# Add DROP rules for all initially no-LOS pairs.
 		cmds = []
@@ -329,6 +313,7 @@ class channel:
 					continue
 				if delay < 0:
 					cmds += self._olsr_pair_cmds('-A', n, j, node_list)
+		logging.info(f"OLSR: applying {len(cmds)} DROP rules for no-LOS pairs...")
 		self._run_iptables_cmds(cmds)
 		self._olsr_enabled = True
 		logging.info(f"OLSR topology sync enabled; {len(self._olsr_blocked_pairs)} pairs initially blocked")
@@ -411,17 +396,16 @@ class channel:
 			if r.returncode != 0:
 				logging.debug(f"olsr-sync: {' '.join(cmd[3:])}: {r.stderr.strip()}")
 
-	def _reinit_container_olsr(self, n, node, node_list):
-		'''Re-install the VSNES_OLSR chain and all current block rules for a
-		single container. Called automatically when a container restart is
-		detected by the event watcher.'''
-		name = node.name
-		if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
-			return
+	def _ensure_olsr_chain(self, name):
+		'''Create (idempotently) the VSNES_OLSR chain in container <name> and
+		jump UDP/698 (OLSR HELLO) INPUT traffic into it. Shared by initial
+		setup and per-container restart recovery.'''
+		# -N may fail if the chain already exists; -F clears stale rules.
 		subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-N', OLSR_CHAIN],
 					   capture_output=True)
 		subprocess.run(['docker', 'exec', name, OLSR_IPTABLES, '-F', OLSR_CHAIN],
 					   capture_output=True)
+		# Idempotent jump from INPUT.
 		r = subprocess.run(['docker', 'exec', name, OLSR_IPTABLES,
 							'-C', 'INPUT', '-p', 'udp', '--dport', '698',
 							'-j', OLSR_CHAIN], capture_output=True)
@@ -430,6 +414,15 @@ class channel:
 							'-I', 'INPUT', '1',
 							'-p', 'udp', '--dport', '698',
 							'-j', OLSR_CHAIN], capture_output=True)
+
+	def _reinit_container_olsr(self, n, node, node_list):
+		'''Re-install the VSNES_OLSR chain and all current block rules for a
+		single container. Called automatically when a container restart is
+		detected by the event watcher.'''
+		name = node.name
+		if not (getattr(node, 'ip_ext', None) and node._is_docker_container()):
+			return
+		self._ensure_olsr_chain(name)
 		cmds = []
 		for j, peer in enumerate(node_list):
 			if j == n:
@@ -469,9 +462,7 @@ class channel:
 				if self._olsr_enabled:
 					logging.warning(f"OLSR event watcher: {exc}")
 
-		t = threading.Thread(target=_watch, daemon=True, name='olsr-event-watcher')
-		t.start()
-		self._olsr_watcher_thread = t
+		threading.Thread(target=_watch, daemon=True, name='olsr-event-watcher').start()
 
 	# ─────────────────────────────────────────────────────────────────────────
 

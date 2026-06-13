@@ -1,715 +1,546 @@
-qdisc add dev veth9e5d728 ingress handle ffff:
-filter add dev veth9e5d728 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb1
+qdisc add dev veth28fe64f ingress handle ffff:
+filter add dev veth28fe64f parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb1
 qdisc add dev ifb1 root handle 1: htb
-qdisc add dev vethe323e3d ingress handle ffff:
-filter add dev vethe323e3d parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb2
+qdisc add dev vethac3e4fd ingress handle ffff:
+filter add dev vethac3e4fd parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb2
 qdisc add dev ifb2 root handle 1: htb
-qdisc add dev vetha1d3864 ingress handle ffff:
-filter add dev vetha1d3864 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb3
+qdisc add dev veth4ef7a65 ingress handle ffff:
+filter add dev veth4ef7a65 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb3
 qdisc add dev ifb3 root handle 1: htb
-qdisc add dev veth039424c ingress handle ffff:
-filter add dev veth039424c parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb4
+qdisc add dev veth2f901b8 ingress handle ffff:
+filter add dev veth2f901b8 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb4
 qdisc add dev ifb4 root handle 1: htb
-qdisc add dev vethfac9b03 ingress handle ffff:
-filter add dev vethfac9b03 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb5
+qdisc add dev veth115ce73 ingress handle ffff:
+filter add dev veth115ce73 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb5
 qdisc add dev ifb5 root handle 1: htb
-qdisc add dev vethadfe2c2 ingress handle ffff:
-filter add dev vethadfe2c2 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb6
+qdisc add dev vethc3979ce ingress handle ffff:
+filter add dev vethc3979ce parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb6
 qdisc add dev ifb6 root handle 1: htb
-qdisc add dev veth5585590 ingress handle ffff:
-filter add dev veth5585590 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb7
+qdisc add dev veth390cf46 ingress handle ffff:
+filter add dev veth390cf46 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb7
 qdisc add dev ifb7 root handle 1: htb
-qdisc add dev veth784ecdc ingress handle ffff:
-filter add dev veth784ecdc parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb8
+qdisc add dev veth594535f ingress handle ffff:
+filter add dev veth594535f parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb8
 qdisc add dev ifb8 root handle 1: htb
-qdisc add dev vetha9a026d ingress handle ffff:
-filter add dev vetha9a026d parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb9
+qdisc add dev veth7ee6ac6 ingress handle ffff:
+filter add dev veth7ee6ac6 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb9
 qdisc add dev ifb9 root handle 1: htb
-qdisc add dev veth99d67f7 ingress handle ffff:
-filter add dev veth99d67f7 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb10
+qdisc add dev vethd4688e7 ingress handle ffff:
+filter add dev vethd4688e7 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb10
 qdisc add dev ifb10 root handle 1: htb
-qdisc add dev vethacb5e8f ingress handle ffff:
-filter add dev vethacb5e8f parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb11
+qdisc add dev veth6f80a19 ingress handle ffff:
+filter add dev veth6f80a19 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb11
 qdisc add dev ifb11 root handle 1: htb
-qdisc add dev vethfe57bc6 ingress handle ffff:
-filter add dev vethfe57bc6 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb12
+qdisc add dev veth77a6997 ingress handle ffff:
+filter add dev veth77a6997 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb12
 qdisc add dev ifb12 root handle 1: htb
-qdisc add dev veth44229f0 ingress handle ffff:
-filter add dev veth44229f0 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb13
+qdisc add dev vethd171a01 ingress handle ffff:
+filter add dev vethd171a01 parent ffff: protocol all u32 match u32 0 0 action mirred egress redirect dev ifb13
 qdisc add dev ifb13 root handle 1: htb
 class add dev ifb1 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb1 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:2 handle 12: netem delay 25.254ms loss 0.5% 0.0%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb1 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb1 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb1 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb1 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:6 handle 16: netem delay 25.240ms loss 0.5% 0.0%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb1 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:7 handle 17: netem delay 16.468ms loss 0.5% 0.0%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb1 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb1 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb1 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb1 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb1 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:12 handle 112: netem delay 9.968ms loss 0.5% 0.0%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb1 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb1 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb1 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb2 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:1 handle 11: netem delay 25.254ms loss 0.5% 0.0%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb2 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb2 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:3 handle 13: netem delay 25.269ms loss 0.5% 0.0%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb2 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb2 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb2 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb2 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:7 handle 17: netem delay 10.686ms loss 0.5% 0.0%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb2 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:8 handle 18: netem delay 16.606ms loss 0.5% 0.0%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb2 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb2 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb2 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb2 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb2 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb2 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb2 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb3 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb3 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:2 handle 12: netem delay 25.269ms loss 0.5% 0.0%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb3 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb3 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:4 handle 14: netem delay 25.273ms loss 0.5% 0.0%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb3 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb3 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb3 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb3 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:8 handle 18: netem delay 10.202ms loss 0.5% 0.0%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb3 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:9 handle 19: netem delay 16.160ms loss 0.5% 0.0%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb3 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb3 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb3 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb3 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb3 parent 1:13 handle 113: netem delay 8.244ms loss 2.0% 0.5%
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb3 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb4 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb4 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb4 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:3 handle 13: netem delay 25.273ms loss 0.5% 0.0%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb4 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb4 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:5 handle 15: netem delay 25.271ms loss 0.5% 0.0%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb4 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb4 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb4 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb4 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:9 handle 19: netem delay 9.992ms loss 0.5% 0.0%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb4 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:10 handle 110: netem delay 16.478ms loss 0.5% 0.0%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb4 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb4 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb4 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb4 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb4 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb5 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb5 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb5 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb5 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:4 handle 14: netem delay 25.271ms loss 0.5% 0.0%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb5 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb5 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:6 handle 16: netem delay 25.253ms loss 0.5% 0.0%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb5 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb5 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb5 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb5 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:10 handle 110: netem delay 10.693ms loss 0.5% 0.0%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb5 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:11 handle 111: netem delay 16.602ms loss 0.5% 0.0%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb5 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb5 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb5 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb5 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb6 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:1 handle 11: netem delay 25.240ms loss 0.5% 0.0%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb6 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb6 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb6 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb6 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:5 handle 15: netem delay 25.253ms loss 0.5% 0.0%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb6 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb6 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb6 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb6 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb6 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb6 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:11 handle 111: netem delay 10.184ms loss 0.5% 0.0%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb6 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:12 handle 112: netem delay 16.147ms loss 0.5% 0.0%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb6 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb6 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb6 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb7 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:1 handle 11: netem delay 16.468ms loss 0.5% 0.0%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb7 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:2 handle 12: netem delay 10.686ms loss 0.5% 0.0%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb7 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb7 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb7 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb7 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb7 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb7 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:8 handle 18: netem delay 25.263ms loss 0.5% 0.0%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb7 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb7 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb7 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb7 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:12 handle 112: netem delay 25.244ms loss 0.5% 0.0%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb7 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb7 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb7 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb8 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb8 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:2 handle 12: netem delay 16.606ms loss 0.5% 0.0%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb8 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:3 handle 13: netem delay 10.202ms loss 0.5% 0.0%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb8 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb8 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb8 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb8 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:7 handle 17: netem delay 25.263ms loss 0.5% 0.0%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb8 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb8 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:9 handle 19: netem delay 25.271ms loss 0.5% 0.0%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb8 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb8 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb8 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb8 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb8 parent 1:13 handle 113: netem delay 5.912ms loss 2.0% 0.5%
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb8 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb9 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb9 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb9 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:3 handle 13: netem delay 16.160ms loss 0.5% 0.0%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb9 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:4 handle 14: netem delay 9.992ms loss 0.5% 0.0%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb9 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb9 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb9 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb9 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:8 handle 18: netem delay 25.271ms loss 0.5% 0.0%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb9 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb9 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:10 handle 110: netem delay 25.273ms loss 0.5% 0.0%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb9 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb9 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb9 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb9 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb9 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb10 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb10 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb10 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb10 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:4 handle 14: netem delay 16.478ms loss 0.5% 0.0%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb10 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:5 handle 15: netem delay 10.693ms loss 0.5% 0.0%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb10 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb10 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb10 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb10 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:9 handle 19: netem delay 25.273ms loss 0.5% 0.0%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb10 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb10 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:11 handle 111: netem delay 25.264ms loss 0.5% 0.0%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb10 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb10 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb10 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb10 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb11 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb11 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb11 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb11 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb11 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:5 handle 15: netem delay 16.602ms loss 0.5% 0.0%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb11 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:6 handle 16: netem delay 10.184ms loss 0.5% 0.0%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb11 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb11 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb11 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb11 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:10 handle 110: netem delay 25.264ms loss 0.5% 0.0%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb11 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb11 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:12 handle 112: netem delay 25.243ms loss 0.5% 0.0%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb11 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb11 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb11 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb12 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:1 handle 11: netem delay 9.968ms loss 0.5% 0.0%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb12 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb12 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:3 handle 13: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb12 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb12 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb12 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:6 handle 16: netem delay 16.147ms loss 0.5% 0.0%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb12 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:7 handle 17: netem delay 25.244ms loss 0.5% 0.0%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb12 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:8 handle 18: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb12 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb12 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb12 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:11 handle 111: netem delay 25.243ms loss 0.5% 0.0%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb12 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb12 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb12 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb12 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb13 parent 1: classid 1:1 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:1 handle 11: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.1/32 flowid 1:1
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.101/32 flowid 1:1
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb13 parent 1: classid 1:2 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:2 handle 12: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:2
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.102/32 flowid 1:2
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb13 parent 1: classid 1:3 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:3 handle 13: netem delay 8.244ms loss 2.0% 0.5%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:3
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.103/32 flowid 1:3
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb13 parent 1: classid 1:4 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:4 handle 14: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:4
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.104/32 flowid 1:4
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb13 parent 1: classid 1:5 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:5 handle 15: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.5/32 flowid 1:5
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.105/32 flowid 1:5
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb13 parent 1: classid 1:6 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:6 handle 16: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.6/32 flowid 1:6
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.106/32 flowid 1:6
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb13 parent 1: classid 1:7 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:7 handle 17: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.7/32 flowid 1:7
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.107/32 flowid 1:7
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb13 parent 1: classid 1:8 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:8 handle 18: netem delay 5.912ms loss 2.0% 0.5%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.8/32 flowid 1:8
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.108/32 flowid 1:8
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb13 parent 1: classid 1:9 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:9 handle 19: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.9/32 flowid 1:9
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.109/32 flowid 1:9
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb13 parent 1: classid 1:10 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:10 handle 110: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.10/32 flowid 1:10
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.110/32 flowid 1:10
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb13 parent 1: classid 1:11 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:11 handle 111: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.11/32 flowid 1:11
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.111/32 flowid 1:11
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb13 parent 1: classid 1:12 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:12 handle 112: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.12/32 flowid 1:12
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.112/32 flowid 1:12
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb13 parent 1: classid 1:13 htb rate 100.0mbit
 qdisc add dev ifb13 parent 1:13 handle 113: netem loss 100%
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 10.0.0.13/32 flowid 1:13
-filter add dev ifb13 parent 1:0 protocol ip prio 1 u32 match ip dst 172.27.12.201/32 flowid 1:13
+filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
