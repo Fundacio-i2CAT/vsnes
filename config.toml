@@ -5,8 +5,8 @@ unicast_flooding = 0
 	TimeInterval = 0.25		#[min]
 	Contact_speed = 5.0
 	Non_contact_speed = 10.0
-	start_datetime = '2026-06-08 12:00:00'
-	end_datetime = '2026-06-08 13:00:00'
+	start_datetime = '2026-06-18 12:00:00'
+	end_datetime = '2026-06-18 13:00:00'
 [SpaceSegment]
 	TLE = 'constellation.tle'
 	[[SpaceSegment.SatelliteSistem]]

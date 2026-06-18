@@ -82,9 +82,10 @@ RUN echo '#!/bin/sh\nexec cat /dev/null' > /usr/local/bin/kmsg-hack && chmod +x 
 # Mesh / routing additions (kept after k3s so the k3s layer stays cached)
 # ---------------------------------------------------------------------------
 
-# Babel routing daemon (from Debian)
+# Babel routing daemon + performance measurement tools (scripts/bench)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     babeld \
+    iperf3 \
     && rm -rf /var/lib/apt/lists/*
 
 # olsrd compiled in stage 1 (binary -> /usr/sbin, plugin -> /usr/lib,

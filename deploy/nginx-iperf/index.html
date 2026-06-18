@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VSNES · nginx-iperf</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0b1020; color:#e6edf3;
+           display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; }
+    .card { background:#121a33; border:1px solid #243056; border-radius:14px;
+            padding:2.5rem 3rem; max-width:540px; box-shadow:0 8px 40px rgba(0,0,0,.4); }
+    h1 { margin:0 0 .25rem; font-size:1.6rem; }
+    .sub { color:#7c8db5; margin-bottom:1.5rem; }
+    code { background:#0b1020; padding:.15rem .4rem; border-radius:5px; color:#9ecbff; }
+    .ok { color:#3fb950; font-weight:600; }
+    ul { line-height:1.8; padding-left:1.1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛰️ VSNES · nginx-iperf</h1>
+    <div class="sub">Served from a k3s pod on a VSNES satellite</div>
+    <p class="ok">✓ HTTP is reachable from the ground station.</p>
+    <ul>
+      <li>Web page: nginx on container port <code>80</code> → NodePort <code>30080</code></li>
+      <li>Throughput: iperf3 server on <code>5201</code> → NodePort <code>30201</code></li>
+    </ul>
+    <p>Test throughput from the GS:<br>
+       <code>iperf3 -c &lt;node-ip&gt; -p 30201</code></p>
+  </div>
+</body>
+</html>

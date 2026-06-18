@@ -56,7 +56,7 @@ class add dev ifb1 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:6 handle 16: netem delay 25.240ms loss 0.5% 0.0%
 filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb1 parent 1: classid 1:7 htb rate 10000.0mbit
-qdisc add dev ifb1 parent 1:7 handle 17: netem delay 16.468ms loss 0.5% 0.0%
+qdisc add dev ifb1 parent 1:7 handle 17: netem delay 21.950ms loss 0.5% 0.0%
 filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb1 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:8 handle 18: netem loss 100%
@@ -71,7 +71,7 @@ class add dev ifb1 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb1 parent 1:11 handle 111: netem loss 100%
 filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb1 parent 1: classid 1:12 htb rate 10000.0mbit
-qdisc add dev ifb1 parent 1:12 handle 112: netem delay 9.968ms loss 0.5% 0.0%
+qdisc add dev ifb1 parent 1:12 handle 112: netem delay 6.156ms loss 0.5% 0.0%
 filter add dev ifb1 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb1 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb1 parent 1:13 handle 113: netem loss 100%
@@ -95,10 +95,10 @@ class add dev ifb2 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:6 handle 16: netem loss 100%
 filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb2 parent 1: classid 1:7 htb rate 10000.0mbit
-qdisc add dev ifb2 parent 1:7 handle 17: netem delay 10.686ms loss 0.5% 0.0%
+qdisc add dev ifb2 parent 1:7 handle 17: netem delay 11.289ms loss 0.5% 0.0%
 filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb2 parent 1: classid 1:8 htb rate 10000.0mbit
-qdisc add dev ifb2 parent 1:8 handle 18: netem delay 16.606ms loss 0.5% 0.0%
+qdisc add dev ifb2 parent 1:8 handle 18: netem delay 22.546ms loss 0.5% 0.0%
 filter add dev ifb2 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb2 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb2 parent 1:9 handle 19: netem loss 100%
@@ -137,10 +137,10 @@ class add dev ifb3 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:7 handle 17: netem loss 100%
 filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb3 parent 1: classid 1:8 htb rate 10000.0mbit
-qdisc add dev ifb3 parent 1:8 handle 18: netem delay 10.202ms loss 0.5% 0.0%
+qdisc add dev ifb3 parent 1:8 handle 18: netem delay 8.027ms loss 0.5% 0.0%
 filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb3 parent 1: classid 1:9 htb rate 10000.0mbit
-qdisc add dev ifb3 parent 1:9 handle 19: netem delay 16.160ms loss 0.5% 0.0%
+qdisc add dev ifb3 parent 1:9 handle 19: netem delay 20.462ms loss 0.5% 0.0%
 filter add dev ifb3 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb3 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb3 parent 1:10 handle 110: netem loss 100%
@@ -179,10 +179,10 @@ class add dev ifb4 parent 1: classid 1:8 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:8 handle 18: netem loss 100%
 filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb4 parent 1: classid 1:9 htb rate 10000.0mbit
-qdisc add dev ifb4 parent 1:9 handle 19: netem delay 9.992ms loss 0.5% 0.0%
+qdisc add dev ifb4 parent 1:9 handle 19: netem delay 6.181ms loss 0.5% 0.0%
 filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb4 parent 1: classid 1:10 htb rate 10000.0mbit
-qdisc add dev ifb4 parent 1:10 handle 110: netem delay 16.478ms loss 0.5% 0.0%
+qdisc add dev ifb4 parent 1:10 handle 110: netem delay 21.955ms loss 0.5% 0.0%
 filter add dev ifb4 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb4 parent 1: classid 1:11 htb rate 10000.0mbit
 qdisc add dev ifb4 parent 1:11 handle 111: netem loss 100%
@@ -221,10 +221,10 @@ class add dev ifb5 parent 1: classid 1:9 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:9 handle 19: netem loss 100%
 filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac 7e:c4:ae:a9:86:b1 classid 1:9
 class add dev ifb5 parent 1: classid 1:10 htb rate 10000.0mbit
-qdisc add dev ifb5 parent 1:10 handle 110: netem delay 10.693ms loss 0.5% 0.0%
+qdisc add dev ifb5 parent 1:10 handle 110: netem delay 11.293ms loss 0.5% 0.0%
 filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb5 parent 1: classid 1:11 htb rate 10000.0mbit
-qdisc add dev ifb5 parent 1:11 handle 111: netem delay 16.602ms loss 0.5% 0.0%
+qdisc add dev ifb5 parent 1:11 handle 111: netem delay 22.541ms loss 0.5% 0.0%
 filter add dev ifb5 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb5 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb5 parent 1:12 handle 112: netem loss 100%
@@ -263,19 +263,19 @@ class add dev ifb6 parent 1: classid 1:10 htb rate 10000.0mbit
 qdisc add dev ifb6 parent 1:10 handle 110: netem loss 100%
 filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac c2:1f:2f:6c:9c:ca classid 1:10
 class add dev ifb6 parent 1: classid 1:11 htb rate 10000.0mbit
-qdisc add dev ifb6 parent 1:11 handle 111: netem delay 10.184ms loss 0.5% 0.0%
+qdisc add dev ifb6 parent 1:11 handle 111: netem delay 8.005ms loss 0.5% 0.0%
 filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac ca:62:25:fa:f2:82 classid 1:11
 class add dev ifb6 parent 1: classid 1:12 htb rate 10000.0mbit
-qdisc add dev ifb6 parent 1:12 handle 112: netem delay 16.147ms loss 0.5% 0.0%
+qdisc add dev ifb6 parent 1:12 handle 112: netem delay 20.456ms loss 0.5% 0.0%
 filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb6 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb6 parent 1:13 handle 113: netem loss 100%
 filter add dev ifb6 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb7 parent 1: classid 1:1 htb rate 10000.0mbit
-qdisc add dev ifb7 parent 1:1 handle 11: netem delay 16.468ms loss 0.5% 0.0%
+qdisc add dev ifb7 parent 1:1 handle 11: netem delay 21.950ms loss 0.5% 0.0%
 filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb7 parent 1: classid 1:2 htb rate 10000.0mbit
-qdisc add dev ifb7 parent 1:2 handle 12: netem delay 10.686ms loss 0.5% 0.0%
+qdisc add dev ifb7 parent 1:2 handle 12: netem delay 11.289ms loss 0.5% 0.0%
 filter add dev ifb7 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb7 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb7 parent 1:3 handle 13: netem loss 100%
@@ -314,10 +314,10 @@ class add dev ifb8 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:1 handle 11: netem loss 100%
 filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb8 parent 1: classid 1:2 htb rate 10000.0mbit
-qdisc add dev ifb8 parent 1:2 handle 12: netem delay 16.606ms loss 0.5% 0.0%
+qdisc add dev ifb8 parent 1:2 handle 12: netem delay 22.546ms loss 0.5% 0.0%
 filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb8 parent 1: classid 1:3 htb rate 10000.0mbit
-qdisc add dev ifb8 parent 1:3 handle 13: netem delay 10.202ms loss 0.5% 0.0%
+qdisc add dev ifb8 parent 1:3 handle 13: netem delay 8.027ms loss 0.5% 0.0%
 filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb8 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:4 handle 14: netem loss 100%
@@ -347,7 +347,7 @@ class add dev ifb8 parent 1: classid 1:12 htb rate 10000.0mbit
 qdisc add dev ifb8 parent 1:12 handle 112: netem loss 100%
 filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 2e:cd:06:6f:77:f6 classid 1:12
 class add dev ifb8 parent 1: classid 1:13 htb rate 500.0mbit
-qdisc add dev ifb8 parent 1:13 handle 113: netem delay 5.912ms loss 2.0% 0.5%
+qdisc add dev ifb8 parent 1:13 handle 113: netem loss 100%
 filter add dev ifb8 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb9 parent 1: classid 1:1 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:1 handle 11: netem loss 100%
@@ -356,10 +356,10 @@ class add dev ifb9 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:2 handle 12: netem loss 100%
 filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac f6:18:b3:e7:a3:3c classid 1:2
 class add dev ifb9 parent 1: classid 1:3 htb rate 10000.0mbit
-qdisc add dev ifb9 parent 1:3 handle 13: netem delay 16.160ms loss 0.5% 0.0%
+qdisc add dev ifb9 parent 1:3 handle 13: netem delay 20.462ms loss 0.5% 0.0%
 filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb9 parent 1: classid 1:4 htb rate 10000.0mbit
-qdisc add dev ifb9 parent 1:4 handle 14: netem delay 9.992ms loss 0.5% 0.0%
+qdisc add dev ifb9 parent 1:4 handle 14: netem delay 6.181ms loss 0.5% 0.0%
 filter add dev ifb9 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb9 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb9 parent 1:5 handle 15: netem loss 100%
@@ -398,10 +398,10 @@ class add dev ifb10 parent 1: classid 1:3 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:3 handle 13: netem loss 100%
 filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac 36:0f:25:70:33:fb classid 1:3
 class add dev ifb10 parent 1: classid 1:4 htb rate 10000.0mbit
-qdisc add dev ifb10 parent 1:4 handle 14: netem delay 16.478ms loss 0.5% 0.0%
+qdisc add dev ifb10 parent 1:4 handle 14: netem delay 21.955ms loss 0.5% 0.0%
 filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb10 parent 1: classid 1:5 htb rate 10000.0mbit
-qdisc add dev ifb10 parent 1:5 handle 15: netem delay 10.693ms loss 0.5% 0.0%
+qdisc add dev ifb10 parent 1:5 handle 15: netem delay 11.293ms loss 0.5% 0.0%
 filter add dev ifb10 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb10 parent 1: classid 1:6 htb rate 10000.0mbit
 qdisc add dev ifb10 parent 1:6 handle 16: netem loss 100%
@@ -440,10 +440,10 @@ class add dev ifb11 parent 1: classid 1:4 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:4 handle 14: netem loss 100%
 filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac ba:5e:60:0a:52:cc classid 1:4
 class add dev ifb11 parent 1: classid 1:5 htb rate 10000.0mbit
-qdisc add dev ifb11 parent 1:5 handle 15: netem delay 16.602ms loss 0.5% 0.0%
+qdisc add dev ifb11 parent 1:5 handle 15: netem delay 22.541ms loss 0.5% 0.0%
 filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb11 parent 1: classid 1:6 htb rate 10000.0mbit
-qdisc add dev ifb11 parent 1:6 handle 16: netem delay 10.184ms loss 0.5% 0.0%
+qdisc add dev ifb11 parent 1:6 handle 16: netem delay 8.005ms loss 0.5% 0.0%
 filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb11 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb11 parent 1:7 handle 17: netem loss 100%
@@ -467,7 +467,7 @@ class add dev ifb11 parent 1: classid 1:13 htb rate 500.0mbit
 qdisc add dev ifb11 parent 1:13 handle 113: netem loss 100%
 filter add dev ifb11 parent 1:0 protocol all prio 1 flower dst_mac 06:b3:a3:9c:b0:79 classid 1:13
 class add dev ifb12 parent 1: classid 1:1 htb rate 10000.0mbit
-qdisc add dev ifb12 parent 1:1 handle 11: netem delay 9.968ms loss 0.5% 0.0%
+qdisc add dev ifb12 parent 1:1 handle 11: netem delay 6.156ms loss 0.5% 0.0%
 filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac da:6d:47:34:4b:ac classid 1:1
 class add dev ifb12 parent 1: classid 1:2 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:2 handle 12: netem loss 100%
@@ -482,7 +482,7 @@ class add dev ifb12 parent 1: classid 1:5 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:5 handle 15: netem loss 100%
 filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac a2:c8:9c:5f:94:d7 classid 1:5
 class add dev ifb12 parent 1: classid 1:6 htb rate 10000.0mbit
-qdisc add dev ifb12 parent 1:6 handle 16: netem delay 16.147ms loss 0.5% 0.0%
+qdisc add dev ifb12 parent 1:6 handle 16: netem delay 20.456ms loss 0.5% 0.0%
 filter add dev ifb12 parent 1:0 protocol all prio 1 flower dst_mac 26:a5:b8:3a:ab:8b classid 1:6
 class add dev ifb12 parent 1: classid 1:7 htb rate 10000.0mbit
 qdisc add dev ifb12 parent 1:7 handle 17: netem delay 25.244ms loss 0.5% 0.0%
@@ -527,7 +527,7 @@ class add dev ifb13 parent 1: classid 1:7 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:7 handle 17: netem loss 100%
 filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac 46:bd:de:70:4d:a2 classid 1:7
 class add dev ifb13 parent 1: classid 1:8 htb rate 500.0mbit
-qdisc add dev ifb13 parent 1:8 handle 18: netem delay 5.912ms loss 2.0% 0.5%
+qdisc add dev ifb13 parent 1:8 handle 18: netem loss 100%
 filter add dev ifb13 parent 1:0 protocol all prio 1 flower dst_mac ea:10:01:73:43:65 classid 1:8
 class add dev ifb13 parent 1: classid 1:9 htb rate 500.0mbit
 qdisc add dev ifb13 parent 1:9 handle 19: netem loss 100%

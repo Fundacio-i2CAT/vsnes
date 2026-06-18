@@ -21,8 +21,10 @@
 #                 node-token file (includes CA hash prefix like K10...).
 #                 Use: docker exec -e K3S_TOKEN="$(docker exec MASTER cat /var/lib/rancher/k3s/server/node-token)" SAT-N k3s-ctl distributed-master MASTER_IP
 #   K3S_IFACE     flannel iface   (default: eth0)
-#   K3S_NODE_IP   node IP         (default: the node's 10.0.0.x mesh address,
-#                                  else the primary eth0 address)
+#   K3S_NODE_IP   node IP         (default: the node's 172.27.x management
+#                                  address (OLSRd-routed), else primary eth0.
+#                                  The orchestrator pins this explicitly to
+#                                  avoid racing the sim's eth0 reconfiguration.)
 #   K3S_DATA_DIR  data dir        (default: /var/lib/rancher/k3s)
 
 set -u
