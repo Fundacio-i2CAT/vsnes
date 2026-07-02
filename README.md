@@ -542,3 +542,12 @@ Find more information at https://i2cat.net/tech-transfer/
 Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. See https://www.gnu.org/licenses/agpl-3.0.en.html.
 
 For licensing enquiries: techtransfer@i2cat.net
+
+## Citation
+
+If you use this software in academic work, please cite:
+
+> Ruiz-de-Azúa, J. A., Lopez, U., Avila, J., & Benítez, I.  
+> *VSNeS: Virtual Satellite Network Simulator* [Software].  
+> Fundació i2CAT.  
+> GitHub repository: https://github.com/Fundacio-i2CAT/vsnes
