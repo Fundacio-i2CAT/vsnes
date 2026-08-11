@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNES — Paper View</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        /* hide any residual Cesium chrome */
+        .cesium-viewer-bottom,
+        .cesium-viewer-toolbar,
+        .cesium-viewer-animationContainer,
+        .cesium-viewer-timelineContainer,
+        .cesium-viewer-fullscreenContainer {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="hiddenCredits" style="display:none"></div>
+
+    <script>
+        // ---- figure style ------------------------------------------------
+        const ORBIT_COLOR = Cesium.Color.fromCssColorString("#22bb22");     // green orbits
+        const LINK_COLOR = Cesium.Color.fromCssColorString("#00c8ff");      // cyan ISL links
+        const GSL_COLOR = Cesium.Color.fromCssColorString("#ff8c00");       // orange sat-to-ground links
+        const COVERAGE_COLOR = Cesium.Color.fromCssColorString("#ffd400");  // yellow coverage
+        const SAT_SCALE = 0.35;      // small satellite icons
+        const GS_SCALE = 0.28;       // small ground stations
+
+        // coverage circle: ground radius for a satellite at ALT_KM seen above
+        // COVERAGE_ELEV_DEG from the ground
+        const ALT_KM = 780.0, COVERAGE_ELEV_DEG = 25.0, RE_KM = 6371.0;
+        const el = Cesium.Math.toRadians(COVERAGE_ELEV_DEG);
+        const psi = Math.acos((RE_KM / (RE_KM + ALT_KM)) * Math.cos(el)) - el;
+        const COVERAGE_RADIUS_M = RE_KM * psi * 1000.0;
+
+        // ---- viewer: no controls, white scene ----------------------------
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: false,
+            timeline: false,
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            fullscreenButton: false,
+            selectionIndicator: false,
+            infoBox: false,
+            shouldAnimate: true,
+            skyBox: false,
+            skyAtmosphere: false,
+            creditContainer: "hiddenCredits",
+            imageryProvider: false,
+            terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+            contextOptions: { webgl: { alpha: true } }
+        });
+
+        const scene = viewer.scene;
+        scene.backgroundColor = Cesium.Color.WHITE;
+        scene.globe.baseColor = Cesium.Color.WHITE;
+        scene.globe.showGroundAtmosphere = false;
+        scene.globe.enableLighting = false;
+        scene.fog.enabled = false;
+        if (scene.sun) scene.sun.show = false;
+        if (scene.moon) scene.moon.show = false;
+        if (scene.skyBox) scene.skyBox.show = false;
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(10, 40, 26_000_000)
+        });
+
+        // ---- country borders in black ------------------------------------
+        const BORDERS_URL =
+            "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
+        Cesium.GeoJsonDataSource.load(BORDERS_URL, {
+            stroke: Cesium.Color.BLACK,
+            fill: Cesium.Color.TRANSPARENT,
+            strokeWidth: 1.2
+        }).then(ds => {
+            ds.entities.values.forEach(e => {
+                if (e.polygon) {
+                    e.polygon.fill = false;
+                    e.polygon.outline = true;
+                    e.polygon.outlineColor = Cesium.Color.BLACK;
+                    e.polygon.height = 0;   // outline on the ellipsoid surface
+                }
+            });
+            viewer.dataSources.add(ds);
+        }).catch(err => console.warn("Country borders unavailable:", err));
+
+        // ---- Iridium grid: keep only the 4 real ISLs per satellite --------
+        // SATELLITE-N -> plane = (N-1)/11, slot = (N-1)%11 (6 planes x 11).
+        // Front/back  = same plane, adjacent slot (mod 11).
+        // Left/right  = adjacent plane, same slot. No links across the
+        // counter-rotating seam (plane 0 <-> plane 5).
+        const PLANES = 6, PER_PLANE = 11;
+        function satIndex(name) {
+            const m = /^SATELLITE-(\d+)$/.exec(name);
+            return m ? parseInt(m[1], 10) - 1 : null;
+        }
+        // classify a polyline entity id: "isl" (grid ISL), "gsl" (sat-ground
+        // contact), or "hide" (non-grid ISL)
+        function linkType(id) {
+            const parts = id.split("-to-");
+            if (parts.length !== 2) return "isl";       // not a link id
+            const a = satIndex(parts[0]), b = satIndex(parts[1]);
+            if (a === null || b === null) return "gsl"; // sat-to-ground contact
+            const pa = Math.floor(a / PER_PLANE), sa = a % PER_PLANE;
+            const pb = Math.floor(b / PER_PLANE), sb = b % PER_PLANE;
+            if (pa === pb) {                            // front/back
+                const d = Math.abs(sa - sb);
+                return (d === 1 || d === PER_PLANE - 1) ? "isl" : "hide";
+            }
+            if (Math.abs(pa - pb) === 1)                // left/right
+                return sa === sb ? "isl" : "hide";
+            return "hide";                              // seam or farther
+        }
+
+        // ---- scenario CZML, restyled --------------------------------------
+        Cesium.CzmlDataSource.load("ScenarioCZML.czml").then(ds => {
+            ds.entities.values.forEach(e => {
+                // hide every label
+                if (e.label) e.label.show = new Cesium.ConstantProperty(false);
+
+                if (e.polyline) {
+                    const kind = linkType(e.id);
+                    if (kind === "hide") {
+                        // non-grid ISL: hide entirely (overrides LOS intervals)
+                        e.polyline.show = new Cesium.ConstantProperty(false);
+                        return;
+                    }
+                    // grid ISL -> cyan, sat-to-ground contact -> orange
+                    // (both keep their LOS show intervals)
+                    e.polyline.material = new Cesium.ColorMaterialProperty(
+                        kind === "gsl" ? GSL_COLOR : LINK_COLOR);
+                    e.polyline.width = 1;
+                    return;
+                }
+
+                if (e.path) {
+                    // satellite: green orbit, small icon, yellow coverage circle
+                    // draw a full ring: lead + trail cover one orbital period
+                    const PERIOD_S = 6028;   // ~100.4 min at 780 km
+                    e.path.material = new Cesium.ColorMaterialProperty(ORBIT_COLOR);
+                    e.path.width = 2;
+                    e.path.leadTime = new Cesium.ConstantProperty(PERIOD_S);
+                    e.path.trailTime = new Cesium.ConstantProperty(PERIOD_S);
+                    e.path.resolution = new Cesium.ConstantProperty(60);
+                    if (e.billboard) e.billboard.scale = SAT_SCALE;
+                    e.ellipse = new Cesium.EllipseGraphics({
+                        semiMajorAxis: COVERAGE_RADIUS_M,
+                        semiMinorAxis: COVERAGE_RADIUS_M,
+                        height: 0,
+                        fill: false,
+                        outline: true,
+                        outlineColor: COVERAGE_COLOR,
+                        outlineWidth: 2,
+                        granularity: Cesium.Math.toRadians(2.0)
+                    });
+                    return;
+                }
+
+                if (e.billboard) {
+                    // ground station: small icon
+                    e.billboard.scale = GS_SCALE;
+                }
+            });
+            viewer.dataSources.add(ds);
+            viewer.clock.shouldAnimate = true;
+        }).catch(err => console.error("Error loading CZML:", err));
+    </script>
+</body>
+
+</html>

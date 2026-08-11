@@ -265,6 +265,10 @@ def api_call(method, endpoint, json_data=None, timeout=300):
         result = r.json()
         if r.status_code == 200:
             return result, True
+        elif r.status_code == 202:
+            # 202 = accepted-but-not-ready (e.g. scenario still preparing)
+            print(f"  ⏳ {result.get('message', 'Still preparing, please wait...')}")
+            return result, False
         else:
             print(f"  ✗ {result.get('error', 'Failed')}")
             return result, False
@@ -329,8 +333,9 @@ def docker_compose(action, services=None):
 # Scenario loader helper
 # ---------------------------------------------------------------------------
 
-def do_load_scenario():
-    """Prompt for config, upload it, load and init the scenario. Returns True on success."""
+def do_load():
+    """Stage 1 (load): prompt for a config path, upload it, and call the API to
+    load + validate + create the nodes. Returns True on success."""
     config_path_input = _input("Configuration file [config.toml]: ").strip()
     if not config_path_input:
         config_path_input = "config.toml"
@@ -339,7 +344,8 @@ def do_load_scenario():
     if not api_upload("config", config_path):
         print("  ✗ Failed to upload configuration file.")
         return False
-    result, ok = api_call("POST", "/api/load-config")
+    result, ok = api_call("POST", "/api/load-config",
+                          json_data={"isCzml": True, "isDockercompose": False})
     if not ok:
         return False
     summary = result.get('config_summary', {})
@@ -347,10 +353,23 @@ def do_load_scenario():
     print(f"    Satellites:      {summary.get('satellites', 0)}")
     print(f"    Ground stations: {summary.get('ground_stations', 0)}")
     print(f"    Channels:        {summary.get('channels', 0)}")
-    result, ok = api_call("POST", "/api/init-scenario", timeout=60)
+    return True
+
+
+def do_init():
+    """Stage 2 (init): prompt for prepare flags + sudo password, and call the API
+    to prepare the scenario (start nodes, routing rules, channel shaping)."""
+    isVM = _input("Configure & start the VMs/containers + network? (isVM) [Y/n]: ").strip().lower() not in ('n', 'no')
+
+    password = None
+    if isVM:
+        password = _input("Enter sudo password for host network config (or press Enter to skip): ").strip() or None
+    result, ok = api_call("POST", "/api/init-scenario",
+                          json_data={"isVM": isVM, "password": password}, timeout=300)
     if not ok:
         return False
-    print(f"  ✓ {result.get('message')}")
+    print(f"  ✓ {result.get('message')} (isVM={isVM}, routing={result.get('routing_protocol')})")
+    print("    Preparation runs in the background — use 'run' once it is ready.")
     return True
 
 
@@ -435,22 +454,28 @@ def main():
 
         if inp == "help":
             print("- help: shows all available actions")
-            print("- load_scenario: load a configuration file and initialize the scenario")
+            print("- load: load a config file (asks path) → validate + create nodes")
+            print("- init: prepare the scenario (asks sudo password + isVM flag; routing from toml [Routing])")
+            print("- run: start the simulation clock (init must have finished; also restarts after a natural end)")
             print("- scenario: show the loaded nodes and their type")
             print("- start_vms: create or start the VMs for every node")
             print("- compose_up [services...]: start the Docker node containers (docker compose up -d)")
             print("- compose_down: stop and remove the Docker node containers (docker compose down)")
             print("- delete_vm: delete a specific VM")
             print("- write_czml: write ScenarioCZML.czml data for Cesium")
-            print("- run_all: run the emulation and Cesium")
-            print("- run_emulator: run only the emulation")
-            print("- run_cesium: run only the visualization at Cesium")
-            print("- stop: stop the running simulation")
+            print("- stop: stop the run and remove the tc/OLSR rules (keeps the scenario; re-run with 'run')")
+            print("- reset: full teardown — stop + remove rules + wipe the scenario to IDLE")
             print("- shutdown_vms: stop all VMs")
-            print("- exit: program execution ends")
+            print("- exit: detach the controller (leaves the sim + rules running; use stop/reset to tear down)")
 
         elif inp in ('load_scenario', 'load scenario', 'load'):
-            SCENARIO_LOADED = do_load_scenario()
+            SCENARIO_LOADED = do_load()
+
+        elif inp in ('init', 'init_scenario', 'init scenario', 'prepare'):
+            if not SCENARIO_LOADED:
+                print("  No config loaded. Run 'load' first.")
+            else:
+                do_init()
 
         elif inp == "scenario":
             result, ok = api_call("GET", "/api/scenario")
@@ -476,67 +501,26 @@ def main():
         elif inp in ('compose_down', 'compose down'):
             docker_compose("down")
 
-        elif inp in ('run', 'run_all', 'run all'):
-            if not SCENARIO_LOADED:
-                print("  No scenario loaded. Starting load_scenario...")
-                SCENARIO_LOADED = do_load_scenario()
-                if not SCENARIO_LOADED:
-                    continue
-            if not CZML_BOOL:
-                while True:
-                    ans = _input("In this execution, the czml file has not been written. Do you want to load it?(Y/N): ").strip().lower()
-                    if ans in ('y', 'yes'):
-                        result, ok = api_call("POST", "/api/write-czml")
-                        if ok:
-                            CZML_BOOL = True
-                        break
-                    elif ans in ('n', 'no'):
-                        break
-                    else:
-                        print('ERROR: Invalid answer')
-            sudo_pass = _input("Enter sudo password for host network config (or press Enter to skip): ").strip()
-            result, ok = api_call("POST", "/api/simulation/start",
-                                  json_data={"generate_czml": CZML_BOOL, "run_vms": True, "password": sudo_pass or None}, timeout=300)
-            if ok:
-                print(f"  ✓ {result.get('message')}")
-
-        elif inp in ('emu', 'emulator', 'run_emu', 'run emu', 'run_emulator', 'run emulator'):
-            if not SCENARIO_LOADED:
-                print("  No scenario loaded. Starting load_scenario...")
-                SCENARIO_LOADED = do_load_scenario()
-                if not SCENARIO_LOADED:
-                    continue
-            sudo_pass = _input("Enter sudo password for host network config (or press Enter to skip): ").strip()
-            result, ok = api_call("POST", "/api/simulation/start",
-                                  json_data={"generate_czml": CZML_BOOL, "run_vms": True, "password": sudo_pass or None}, timeout=300)
-            if ok:
-                print(f"  ✓ {result.get('message')}")
-
-        elif inp in ('cesium', 'run_cesium', 'run cesium'):
-            if not SCENARIO_LOADED:
-                print("  No scenario loaded. Starting load_scenario...")
-                SCENARIO_LOADED = do_load_scenario()
-                if not SCENARIO_LOADED:
-                    continue
-            if not CZML_BOOL:
-                while True:
-                    ans = _input("In this execution, the czml file has not been written. Do you want to load it?(Y/N): ").strip().lower()
-                    if ans in ('y', 'yes'):
-                        result, ok = api_call("POST", "/api/write-czml")
-                        if ok:
-                            CZML_BOOL = True
-                        break
-                    elif ans in ('n', 'no'):
-                        break
-                    else:
-                        print('ERROR: Invalid answer')
-            result, ok = api_call("POST", "/api/visualization/start",
-                                  json_data={"generate_czml": CZML_BOOL}, timeout=60)
+        elif inp in ('run', 'run_all', 'run all', 'emu', 'emulator', 'run_emu', 'run emu',
+                     'run_emulator', 'run emulator', 'cesium', 'run_cesium', 'run cesium'):
+            # Stage 3 (run): just start the simulation clock. Whether the network
+            # is emulated (and visualization written) was decided by the isVM flag
+            # in 'init' and the isCzml flag in 'load'. Optional per-run override.
+            # Also restarts the clock after a natural end (SIMULATION_ENDED): the
+            # rules are still applied, so it replays from the reset marker.
+            result, ok = api_call("POST", "/api/simulation/start")
             if ok:
                 print(f"  ✓ {result.get('message')}")
 
         elif inp == 'stop':
+            # Remove the tc/OLSR rules but keep the scenario (re-run with 'run').
             result, ok = api_call("POST", "/api/simulation/stop", timeout=60)
+            if ok:
+                print(f"  ✓ {result.get('message')}")
+
+        elif inp == 'reset':
+            # Full teardown: stop + remove rules + wipe the scenario back to IDLE.
+            result, ok = api_call("POST", "/api/reset", timeout=60)
             if ok:
                 print(f"  ✓ {result.get('message')}")
 
@@ -564,21 +548,13 @@ def main():
                         print(f"  VM '{ans}' not found, try again or type 'exit'")
 
         elif inp == "exit":
-            while True:
-                ans = _input("Do you want to delete all the VMs related with the scenario?(Y/N): ").strip().lower()
-                if ans in ('y', 'yes'):
-                    result, ok = api_call("DELETE", "/api/delete-all-vms", timeout=60)
-                    break
-                elif ans in ('n', 'no'):
-                    break
-                else:
-                    print('ERROR: Invalid answer')
-
-            try:
-                requests.post(f"{API_URL}/api/reset", timeout=10)
-            except:
-                pass
-            cleanup()
+            # Exiting the controller does NOT tear the simulation down. The
+            # backend (API/NTP/MCP) and the running sim + its tc/OLSR rules are
+            # left intact — quitting the REPL is just a detach. Tear down
+            # explicitly first if you want that: 'stop' (rules off, scenario
+            # kept) or 'reset' / POST /api/reset (full wipe to IDLE).
+            print("  Detaching — leaving the simulation and rules running (API still on :5050).")
+            print("  Use 'stop' to remove the rules, or 'reset' for a full teardown.")
             print("  Goodbye!")
             break
 

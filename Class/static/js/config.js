@@ -79,13 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </select>
                 </div>
                 
-                <div class="form-group" style="width: 48%;">
-                    <label for="${newSatelliteId}-service" class="form-label">Service</label>
-                    <select id="${newSatelliteId}-service" class="form-control">
-                        <option value="Standard">Standard</option>
-                        <option value="Relay">Relay</option>
-                    </select>
-                </div>
             </div>
             
             <div class="form-group">
@@ -419,7 +412,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             toml += `\t[[SpaceSegment.SatelliteSistem]]\n`;
             toml += `\t\tpropagator = '${getValueById(sat, `${satId}-propagator`) || 'SGP4'}' \t#TwoBody or SGP4\n`;
-            toml += `\t\tService = '${getValueById(sat, `${satId}-service`) || 'Standard'}' \t#Standard or Relay\n`;
             toml += `\t\tname = '${getValueById(sat, `${satId}-name`) || `SATELLITE-${i+1}`}' \n`;
             toml += `\t\tgroup = '${getValueById(sat, `${satId}-group`) || 'LEO'}'\n`;
             toml += `\t\tOS = '${getValueById(sat, `${satId}-os`) || 'debian'}' \t#ubuntu o alpines\n`;
