@@ -191,6 +191,21 @@ def deleteAllVMs(scenario):
         logging.error(f"Error deleting all VMs: {e}")
         return False
 
+def compose_error_lines(output):
+    """Pull the real failure lines out of docker compose output.
+
+    Compose writes its per-container progress ('Container X  Creating') to
+    stderr, so a failed run buries the one line that matters — typically a
+    name conflict with a container left over from an earlier project — under
+    dozens of 'Creating'/'Created' lines. Returns the offending lines, or the
+    tail of the output if nothing matches the known error shapes.
+    """
+    hits = [ln.strip() for ln in (output or '').splitlines()
+            if ('Error' in ln or 'error' in ln
+                or 'no such service' in ln or 'Conflict' in ln)]
+    return hits or [ln.strip() for ln in (output or '').splitlines()[-5:] if ln.strip()]
+
+
 def run_docker_compose(action, services=None):
     """Run docker compose up -d / down for the node containers.
     Returns (result_dict, http_status).
@@ -233,8 +248,11 @@ def run_docker_compose(action, services=None):
 
     output = (proc.stdout + proc.stderr).strip()
     if proc.returncode != 0:
-        logging.error(f"docker compose {action} failed: {output}")
+        causes = compose_error_lines(output)
+        logging.error(f"docker compose {action} failed (exit {proc.returncode}): "
+                      + " | ".join(causes))
         return {'error': f'docker compose {action} failed (exit {proc.returncode})',
+                'causes': causes,
                 'output': output.splitlines()}, 500
 
     result = {'message': f'docker compose {action} completed successfully',
@@ -360,8 +378,13 @@ def init_scenario():
 
     global_state['system_status'] = 'PREPARING_VMS'
     scn._prepared = False
+    scn._prepare_error = None
 
     def _prep():
+        # Whatever happens, leave PREPARING_VMS: it is the state that makes
+        # init/start return 409, so staying in it after the thread is gone
+        # locks the API out until a server restart. 'is_prepared' (not the
+        # status) is what distinguishes success from failure.
         try:
             scn.prepare_scenario(isVM=isVM, password=password)
             scn._prepared = True
@@ -369,6 +392,9 @@ def init_scenario():
         except Exception as e:
             logging.error(f"prepare_scenario failed: {e}")
             scn._prepared = False
+            scn._prepare_error = str(e)
+        finally:
+            global_state['system_status'] = 'SCENARIO_INIT'
 
     t = threading.Thread(target=_prep, daemon=True)
     t.start()
@@ -598,7 +624,9 @@ def start_simulation():
     global_state['system_status'] = 'RUNNING_SIMULATION'
     emu_proc = getattr(scn, '_emulator_process', None)
     if emu_proc is not None and not emu_proc.is_alive():
-        global_state['system_status'] = 'PREPARING_VMS'
+        # The scenario is still prepared — only the clock failed. Rolling back
+        # to PREPARING_VMS would 409 every later init/start attempt.
+        global_state['system_status'] = 'SCENARIO_INIT'
         return jsonify({'error': 'Clock thread failed to start'}), 500
     return jsonify({'message': 'Simulation clock started', 'isVM': getattr(scn, '_isVM', True)})
 
@@ -619,7 +647,12 @@ def get_status():
         # Back-compat alias (was: existence of the old VM startup thread).
         'is_creating_VM': bool(global_state['scenario'] is not None
                                and getattr(global_state['scenario'], '_prepare_thread', None) is not None
-                               and global_state['scenario']._prepare_thread.is_alive())
+                               and global_state['scenario']._prepare_thread.is_alive()),
+        # Why the last preparation failed (None if it succeeded or never ran).
+        # Without this a failed prepare is indistinguishable from one that
+        # simply hasn't finished: both just show "not prepared".
+        'prepare_error': getattr(global_state['scenario'], '_prepare_error', None)
+                         if global_state['scenario'] is not None else None
     }
     
     if global_state['scenario']:

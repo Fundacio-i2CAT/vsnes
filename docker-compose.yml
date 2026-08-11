@@ -1,246 +1,2677 @@
 services:
   satellite-1:
-    build: ./docker
-    container_name: SAT-1
-    hostname: SAT-1
+    build: .
+    container_name: SATELLITE-1
+    hostname: SATELLITE-1
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
     security_opt:
       - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
     volumes:
       - /lib/modules:/lib/modules:ro
-      - k3s-data-1:/var/lib/rancher/k3s
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.101
+      olsr_net:
+        ipv4_address: 172.28.0.10
+        mac_address: 02:42:ac:1c:02:0a
     restart: unless-stopped
-
   satellite-2:
-    build: ./docker
-    container_name: SAT-2
-    hostname: SAT-2
+    build: .
+    container_name: SATELLITE-2
+    hostname: SATELLITE-2
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
     security_opt:
       - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
     volumes:
       - /lib/modules:/lib/modules:ro
-      - k3s-data-2:/var/lib/rancher/k3s
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.102
+      olsr_net:
+        ipv4_address: 172.28.0.11
+        mac_address: 02:42:ac:1c:02:0b
     restart: unless-stopped
-
   satellite-3:
-    build: ./docker
-    container_name: SAT-3
-    hostname: SAT-3
+    build: .
+    container_name: SATELLITE-3
+    hostname: SATELLITE-3
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
     security_opt:
       - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
     volumes:
       - /lib/modules:/lib/modules:ro
-      - k3s-data-3:/var/lib/rancher/k3s
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.103
+      olsr_net:
+        ipv4_address: 172.28.0.12
+        mac_address: 02:42:ac:1c:02:0c
     restart: unless-stopped
-
   satellite-4:
-    build: ./docker
-    container_name: SAT-4
-    hostname: SAT-4
+    build: .
+    container_name: SATELLITE-4
+    hostname: SATELLITE-4
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
     security_opt:
       - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
     volumes:
       - /lib/modules:/lib/modules:ro
-      - k3s-data-4:/var/lib/rancher/k3s
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.104
+      olsr_net:
+        ipv4_address: 172.28.0.13
+        mac_address: 02:42:ac:1c:02:0d
     restart: unless-stopped
-
   satellite-5:
-    build: ./docker
-    container_name: SAT-5
-    hostname: SAT-5
+    build: .
+    container_name: SATELLITE-5
+    hostname: SATELLITE-5
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.105
+      olsr_net:
+        ipv4_address: 172.28.0.14
+        mac_address: 02:42:ac:1c:02:0e
     restart: unless-stopped
-
   satellite-6:
-    build: ./docker
-    container_name: SAT-6
-    hostname: SAT-6
+    build: .
+    container_name: SATELLITE-6
+    hostname: SATELLITE-6
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.106
+      olsr_net:
+        ipv4_address: 172.28.0.15
+        mac_address: 02:42:ac:1c:02:0f
     restart: unless-stopped
-
   satellite-7:
-    build: ./docker
-    container_name: SAT-7
-    hostname: SAT-7
+    build: .
+    container_name: SATELLITE-7
+    hostname: SATELLITE-7
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.107
+      olsr_net:
+        ipv4_address: 172.28.0.16
+        mac_address: 02:42:ac:1c:02:10
     restart: unless-stopped
-
   satellite-8:
-    build: ./docker
-    container_name: SAT-8
-    hostname: SAT-8
+    build: .
+    container_name: SATELLITE-8
+    hostname: SATELLITE-8
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.108
+      olsr_net:
+        ipv4_address: 172.28.0.17
+        mac_address: 02:42:ac:1c:02:11
     restart: unless-stopped
-
   satellite-9:
-    build: ./docker
-    container_name: SAT-9
-    hostname: SAT-9
+    build: .
+    container_name: SATELLITE-9
+    hostname: SATELLITE-9
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.109
+      olsr_net:
+        ipv4_address: 172.28.0.18
+        mac_address: 02:42:ac:1c:02:12
     restart: unless-stopped
-
   satellite-10:
-    build: ./docker
-    container_name: SAT-10
-    hostname: SAT-10
+    build: .
+    container_name: SATELLITE-10
+    hostname: SATELLITE-10
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.110
+      olsr_net:
+        ipv4_address: 172.28.0.19
+        mac_address: 02:42:ac:1c:02:13
     restart: unless-stopped
-
   satellite-11:
-    build: ./docker
-    container_name: SAT-11
-    hostname: SAT-11
+    build: .
+    container_name: SATELLITE-11
+    hostname: SATELLITE-11
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.111
+      olsr_net:
+        ipv4_address: 172.28.0.20
+        mac_address: 02:42:ac:1c:02:14
     restart: unless-stopped
-
   satellite-12:
-    build: ./docker
-    container_name: SAT-12
-    hostname: SAT-12
+    build: .
+    container_name: SATELLITE-12
+    hostname: SATELLITE-12
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.112
+      olsr_net:
+        ipv4_address: 172.28.0.21
+        mac_address: 02:42:ac:1c:02:15
     restart: unless-stopped
-
-  
-
-  ibi_es:
-    build: ./docker
+  satellite-13:
+    build: .
+    container_name: SATELLITE-13
+    hostname: SATELLITE-13
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.22
+        mac_address: 02:42:ac:1c:02:16
+    restart: unless-stopped
+  satellite-14:
+    build: .
+    container_name: SATELLITE-14
+    hostname: SATELLITE-14
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.23
+        mac_address: 02:42:ac:1c:02:17
+    restart: unless-stopped
+  satellite-15:
+    build: .
+    container_name: SATELLITE-15
+    hostname: SATELLITE-15
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.24
+        mac_address: 02:42:ac:1c:02:18
+    restart: unless-stopped
+  satellite-16:
+    build: .
+    container_name: SATELLITE-16
+    hostname: SATELLITE-16
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.25
+        mac_address: 02:42:ac:1c:02:19
+    restart: unless-stopped
+  satellite-17:
+    build: .
+    container_name: SATELLITE-17
+    hostname: SATELLITE-17
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.26
+        mac_address: 02:42:ac:1c:02:1a
+    restart: unless-stopped
+  satellite-18:
+    build: .
+    container_name: SATELLITE-18
+    hostname: SATELLITE-18
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.27
+        mac_address: 02:42:ac:1c:02:1b
+    restart: unless-stopped
+  satellite-19:
+    build: .
+    container_name: SATELLITE-19
+    hostname: SATELLITE-19
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.28
+        mac_address: 02:42:ac:1c:02:1c
+    restart: unless-stopped
+  satellite-20:
+    build: .
+    container_name: SATELLITE-20
+    hostname: SATELLITE-20
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.29
+        mac_address: 02:42:ac:1c:02:1d
+    restart: unless-stopped
+  satellite-21:
+    build: .
+    container_name: SATELLITE-21
+    hostname: SATELLITE-21
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.30
+        mac_address: 02:42:ac:1c:02:1e
+    restart: unless-stopped
+  satellite-22:
+    build: .
+    container_name: SATELLITE-22
+    hostname: SATELLITE-22
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.31
+        mac_address: 02:42:ac:1c:02:1f
+    restart: unless-stopped
+  satellite-23:
+    build: .
+    container_name: SATELLITE-23
+    hostname: SATELLITE-23
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.32
+        mac_address: 02:42:ac:1c:02:20
+    restart: unless-stopped
+  satellite-24:
+    build: .
+    container_name: SATELLITE-24
+    hostname: SATELLITE-24
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.33
+        mac_address: 02:42:ac:1c:02:21
+    restart: unless-stopped
+  satellite-25:
+    build: .
+    container_name: SATELLITE-25
+    hostname: SATELLITE-25
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.34
+        mac_address: 02:42:ac:1c:02:22
+    restart: unless-stopped
+  satellite-26:
+    build: .
+    container_name: SATELLITE-26
+    hostname: SATELLITE-26
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.35
+        mac_address: 02:42:ac:1c:02:23
+    restart: unless-stopped
+  satellite-27:
+    build: .
+    container_name: SATELLITE-27
+    hostname: SATELLITE-27
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.36
+        mac_address: 02:42:ac:1c:02:24
+    restart: unless-stopped
+  satellite-28:
+    build: .
+    container_name: SATELLITE-28
+    hostname: SATELLITE-28
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.37
+        mac_address: 02:42:ac:1c:02:25
+    restart: unless-stopped
+  satellite-29:
+    build: .
+    container_name: SATELLITE-29
+    hostname: SATELLITE-29
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.38
+        mac_address: 02:42:ac:1c:02:26
+    restart: unless-stopped
+  satellite-30:
+    build: .
+    container_name: SATELLITE-30
+    hostname: SATELLITE-30
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.39
+        mac_address: 02:42:ac:1c:02:27
+    restart: unless-stopped
+  satellite-31:
+    build: .
+    container_name: SATELLITE-31
+    hostname: SATELLITE-31
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.40
+        mac_address: 02:42:ac:1c:02:28
+    restart: unless-stopped
+  satellite-32:
+    build: .
+    container_name: SATELLITE-32
+    hostname: SATELLITE-32
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.41
+        mac_address: 02:42:ac:1c:02:29
+    restart: unless-stopped
+  satellite-33:
+    build: .
+    container_name: SATELLITE-33
+    hostname: SATELLITE-33
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.42
+        mac_address: 02:42:ac:1c:02:2a
+    restart: unless-stopped
+  satellite-34:
+    build: .
+    container_name: SATELLITE-34
+    hostname: SATELLITE-34
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.43
+        mac_address: 02:42:ac:1c:02:2b
+    restart: unless-stopped
+  satellite-35:
+    build: .
+    container_name: SATELLITE-35
+    hostname: SATELLITE-35
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.44
+        mac_address: 02:42:ac:1c:02:2c
+    restart: unless-stopped
+  satellite-36:
+    build: .
+    container_name: SATELLITE-36
+    hostname: SATELLITE-36
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.45
+        mac_address: 02:42:ac:1c:02:2d
+    restart: unless-stopped
+  satellite-37:
+    build: .
+    container_name: SATELLITE-37
+    hostname: SATELLITE-37
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.46
+        mac_address: 02:42:ac:1c:02:2e
+    restart: unless-stopped
+  satellite-38:
+    build: .
+    container_name: SATELLITE-38
+    hostname: SATELLITE-38
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.47
+        mac_address: 02:42:ac:1c:02:2f
+    restart: unless-stopped
+  satellite-39:
+    build: .
+    container_name: SATELLITE-39
+    hostname: SATELLITE-39
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.48
+        mac_address: 02:42:ac:1c:02:30
+    restart: unless-stopped
+  satellite-40:
+    build: .
+    container_name: SATELLITE-40
+    hostname: SATELLITE-40
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.49
+        mac_address: 02:42:ac:1c:02:31
+    restart: unless-stopped
+  satellite-41:
+    build: .
+    container_name: SATELLITE-41
+    hostname: SATELLITE-41
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.50
+        mac_address: 02:42:ac:1c:02:32
+    restart: unless-stopped
+  satellite-42:
+    build: .
+    container_name: SATELLITE-42
+    hostname: SATELLITE-42
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.51
+        mac_address: 02:42:ac:1c:02:33
+    restart: unless-stopped
+  satellite-43:
+    build: .
+    container_name: SATELLITE-43
+    hostname: SATELLITE-43
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.52
+        mac_address: 02:42:ac:1c:02:34
+    restart: unless-stopped
+  satellite-44:
+    build: .
+    container_name: SATELLITE-44
+    hostname: SATELLITE-44
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.53
+        mac_address: 02:42:ac:1c:02:35
+    restart: unless-stopped
+  satellite-45:
+    build: .
+    container_name: SATELLITE-45
+    hostname: SATELLITE-45
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.54
+        mac_address: 02:42:ac:1c:02:36
+    restart: unless-stopped
+  satellite-46:
+    build: .
+    container_name: SATELLITE-46
+    hostname: SATELLITE-46
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.55
+        mac_address: 02:42:ac:1c:02:37
+    restart: unless-stopped
+  satellite-47:
+    build: .
+    container_name: SATELLITE-47
+    hostname: SATELLITE-47
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.56
+        mac_address: 02:42:ac:1c:02:38
+    restart: unless-stopped
+  satellite-48:
+    build: .
+    container_name: SATELLITE-48
+    hostname: SATELLITE-48
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.57
+        mac_address: 02:42:ac:1c:02:39
+    restart: unless-stopped
+  satellite-49:
+    build: .
+    container_name: SATELLITE-49
+    hostname: SATELLITE-49
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.58
+        mac_address: 02:42:ac:1c:02:3a
+    restart: unless-stopped
+  satellite-50:
+    build: .
+    container_name: SATELLITE-50
+    hostname: SATELLITE-50
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.59
+        mac_address: 02:42:ac:1c:02:3b
+    restart: unless-stopped
+  satellite-51:
+    build: .
+    container_name: SATELLITE-51
+    hostname: SATELLITE-51
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.60
+        mac_address: 02:42:ac:1c:02:3c
+    restart: unless-stopped
+  satellite-52:
+    build: .
+    container_name: SATELLITE-52
+    hostname: SATELLITE-52
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.61
+        mac_address: 02:42:ac:1c:02:3d
+    restart: unless-stopped
+  satellite-53:
+    build: .
+    container_name: SATELLITE-53
+    hostname: SATELLITE-53
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.62
+        mac_address: 02:42:ac:1c:02:3e
+    restart: unless-stopped
+  satellite-54:
+    build: .
+    container_name: SATELLITE-54
+    hostname: SATELLITE-54
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.63
+        mac_address: 02:42:ac:1c:02:3f
+    restart: unless-stopped
+  satellite-55:
+    build: .
+    container_name: SATELLITE-55
+    hostname: SATELLITE-55
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.64
+        mac_address: 02:42:ac:1c:02:40
+    restart: unless-stopped
+  satellite-56:
+    build: .
+    container_name: SATELLITE-56
+    hostname: SATELLITE-56
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.65
+        mac_address: 02:42:ac:1c:02:41
+    restart: unless-stopped
+  satellite-57:
+    build: .
+    container_name: SATELLITE-57
+    hostname: SATELLITE-57
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.66
+        mac_address: 02:42:ac:1c:02:42
+    restart: unless-stopped
+  satellite-58:
+    build: .
+    container_name: SATELLITE-58
+    hostname: SATELLITE-58
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.67
+        mac_address: 02:42:ac:1c:02:43
+    restart: unless-stopped
+  satellite-59:
+    build: .
+    container_name: SATELLITE-59
+    hostname: SATELLITE-59
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.68
+        mac_address: 02:42:ac:1c:02:44
+    restart: unless-stopped
+  satellite-60:
+    build: .
+    container_name: SATELLITE-60
+    hostname: SATELLITE-60
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.69
+        mac_address: 02:42:ac:1c:02:45
+    restart: unless-stopped
+  satellite-61:
+    build: .
+    container_name: SATELLITE-61
+    hostname: SATELLITE-61
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.70
+        mac_address: 02:42:ac:1c:02:46
+    restart: unless-stopped
+  satellite-62:
+    build: .
+    container_name: SATELLITE-62
+    hostname: SATELLITE-62
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.71
+        mac_address: 02:42:ac:1c:02:47
+    restart: unless-stopped
+  satellite-63:
+    build: .
+    container_name: SATELLITE-63
+    hostname: SATELLITE-63
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.72
+        mac_address: 02:42:ac:1c:02:48
+    restart: unless-stopped
+  satellite-64:
+    build: .
+    container_name: SATELLITE-64
+    hostname: SATELLITE-64
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.73
+        mac_address: 02:42:ac:1c:02:49
+    restart: unless-stopped
+  satellite-65:
+    build: .
+    container_name: SATELLITE-65
+    hostname: SATELLITE-65
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.74
+        mac_address: 02:42:ac:1c:02:4a
+    restart: unless-stopped
+  satellite-66:
+    build: .
+    container_name: SATELLITE-66
+    hostname: SATELLITE-66
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - ibi-es
+    environment:
+      - ROLE=client
+      - GS_IP=${GS_IP:-172.28.0.80}
+      - GS_PORTS=5201 5202 5203 5204 5205 5206
+      - PING_INTERVAL=${PING_INTERVAL:-4}
+      - THROUGHPUT_SEGMENT_S=${THROUGHPUT_SEGMENT_S:-900}
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.75
+        mac_address: 02:42:ac:1c:02:4b
+    restart: unless-stopped
+  ibi-es:
+    build: .
     container_name: Ibi_ES
     hostname: Ibi_ES
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.201
+      olsr_net:
+        ipv4_address: 172.28.0.80
+        mac_address: 02:42:ac:1c:02:50
     restart: unless-stopped
-
-  foggia_it:
-    build: ./docker
-    container_name: Foggia_IT
-    hostname: Foggia_IT
+  barcelona-es:
+    build: .
+    container_name: Barcelona_ES
+    hostname: Barcelona_ES
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
     sysctls:
       - net.ipv4.ip_forward=1
     networks:
-      vsnes:
-        ipv4_address: 172.27.12.202
+      olsr_net:
+        ipv4_address: 172.28.0.81
+        mac_address: 02:42:ac:1c:02:51
     restart: unless-stopped
-
-volumes:
-  k3s-data-1:
-  k3s-data-2:
-  k3s-data-3:
-  k3s-data-4:
+  milan-it:
+    build: .
+    container_name: Milan_IT
+    hostname: Milan_IT
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.82
+        mac_address: 02:42:ac:1c:02:52
+    restart: unless-stopped
+  dublin-ie:
+    build: .
+    container_name: Dublin_IE
+    hostname: Dublin_IE
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.83
+        mac_address: 02:42:ac:1c:02:53
+    restart: unless-stopped
+  fairbanks-us:
+    build: .
+    container_name: Fairbanks_US
+    hostname: Fairbanks_US
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.84
+        mac_address: 02:42:ac:1c:02:54
+    restart: unless-stopped
+  seattle-us:
+    build: .
+    container_name: Seattle_US
+    hostname: Seattle_US
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.85
+        mac_address: 02:42:ac:1c:02:55
+    restart: unless-stopped
+  atlanta-us:
+    build: .
+    container_name: Atlanta_US
+    hostname: Atlanta_US
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.86
+        mac_address: 02:42:ac:1c:02:56
+    restart: unless-stopped
+  santiago-cl:
+    build: .
+    container_name: Santiago_CL
+    hostname: Santiago_CL
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.87
+        mac_address: 02:42:ac:1c:02:57
+    restart: unless-stopped
+  capetown-za:
+    build: .
+    container_name: CapeTown_ZA
+    hostname: CapeTown_ZA
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.88
+        mac_address: 02:42:ac:1c:02:58
+    restart: unless-stopped
+  sydney-au:
+    build: .
+    container_name: Sydney_AU
+    hostname: Sydney_AU
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.89
+        mac_address: 02:42:ac:1c:02:59
+    restart: unless-stopped
+  tokyo-jp:
+    build: .
+    container_name: Tokyo_JP
+    hostname: Tokyo_JP
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.90
+        mac_address: 02:42:ac:1c:02:5a
+    restart: unless-stopped
+  mumbai-in:
+    build: .
+    container_name: Mumbai_IN
+    hostname: Mumbai_IN
+    privileged: true
+    cgroup: host
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      - ROLE=server
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - ./results:/results
+      - ./control:/control:ro
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.91
+        mac_address: 02:42:ac:1c:02:5b
+    restart: unless-stopped
+  registry:
+    image: registry:2
+    container_name: vsnes-registry
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./registry-data:/var/lib/registry
+    networks:
+      olsr_net:
+        ipv4_address: 172.28.0.250
 
 networks:
-  vsnes:
-    name: vsnes_net
+  olsr_net:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.27.12.0/24
+        - subnet: 172.28.0.0/24

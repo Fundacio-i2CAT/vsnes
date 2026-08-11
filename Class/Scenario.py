@@ -684,7 +684,14 @@ class scenario:
 		       "--no-recreate", "--no-build"] + missing
 		result = subprocess.run(cmd, capture_output=True, text=True)
 		if result.returncode != 0:
-			logging.error(f"start_from_compose failed: {result.stderr}")
+			# Compose reports progress on stderr, so the real cause (a name
+			# conflict with a leftover container, a service missing from the
+			# regenerated compose file) is buried under 'Creating' lines.
+			out = (result.stdout or '') + (result.stderr or '')
+			causes = [ln.strip() for ln in out.splitlines()
+			          if ('Error' in ln or 'no such service' in ln or 'Conflict' in ln)]
+			logging.error("start_from_compose failed: "
+			              + (" | ".join(causes) if causes else out.strip()))
 			return False
 		logging.info("start_from_compose: containers started")
 		return True
