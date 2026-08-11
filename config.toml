@@ -1,214 +1,1151 @@
-network = '10.0.0.0/24'
-network_ext = '172.27.12.0/24'
+network = "10.0.0.0/24"
+network_ext = "172.28.0.0/24"
 unicast_flooding = 0
+
+[Routing]
+protocol = "olsrd"
+
 [Time]
-	TimeInterval = 0.25		#[min]
-	Contact_speed = 5.0
-	Non_contact_speed = 10.0
-	start_datetime = '2026-06-08 12:00:00'
-	end_datetime = '2026-06-08 13:00:00'
+TimeInterval = 0.25
+Contact_speed = 5.0
+Non_contact_speed = 5.0
+start_datetime = "2026-07-10 16:38:00"
+end_datetime = "2026-07-10 19:00:00"
+
 [SpaceSegment]
-	TLE = 'constellation.tle'
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-1' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.101'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'debian11' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-2' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.102'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'debian11' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-3' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.103'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-3' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-4' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.104'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-4' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-5' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.105'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-5' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-6' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.106'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-6' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-7' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.107'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-7' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-8' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.108'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-8' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-9' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.109'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-9' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-10' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.110'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-10' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-11' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.111'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-11' 
-	[[SpaceSegment.SatelliteSistem]]
-		propagator = 'SGP4'		#TwoBody or SGP4
-		Service = 'Standard'	#Standard or Relay
-		name = 'SAT-12' 
-		group = 'LEO'
-		OS = 'debian'	#ubuntu o alpines
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.112'
-		interface = 'eth0'
-		[SpaceSegment.SatelliteSistem.clone_VM]
-			name_VM = 'SATELLITE-12' 
+TLE = "iridium66.tle"
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-1"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.10"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-1"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-2"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.11"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-2"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-3"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.12"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-3"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-4"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.13"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-4"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-5"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.14"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-5"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-6"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.15"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-6"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-7"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.16"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-7"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-8"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.17"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-8"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-9"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.18"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-9"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-10"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.19"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-10"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-11"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.20"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-11"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-12"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.21"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-12"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-13"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.22"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-13"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-14"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.23"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-14"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-15"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.24"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-15"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-16"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.25"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-16"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-17"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.26"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-17"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-18"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.27"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-18"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-19"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.28"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-19"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-20"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.29"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-20"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-21"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.30"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-21"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-22"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.31"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-22"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-23"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.32"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-23"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-24"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.33"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-24"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-25"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.34"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-25"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-26"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.35"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-26"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-27"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.36"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-27"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-28"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.37"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-28"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-29"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.38"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-29"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-30"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.39"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-30"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-31"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.40"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-31"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-32"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.41"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-32"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-33"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.42"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-33"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-34"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.43"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-34"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-35"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.44"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-35"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-36"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.45"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-36"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-37"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.46"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-37"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-38"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.47"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-38"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-39"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.48"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-39"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-40"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.49"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-40"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-41"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.50"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-41"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-42"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.51"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-42"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-43"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.52"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-43"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-44"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.53"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-44"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-45"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.54"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-45"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-46"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.55"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-46"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-47"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.56"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-47"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-48"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.57"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-48"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-49"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.58"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-49"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-50"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.59"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-50"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-51"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.60"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-51"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-52"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.61"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-52"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-53"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.62"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-53"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-54"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.63"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-54"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-55"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.64"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-55"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-56"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.65"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-56"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-57"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.66"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-57"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-58"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.67"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-58"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-59"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.68"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-59"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-60"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.69"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-60"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-61"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.70"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-61"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-62"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.71"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-62"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-63"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.72"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-63"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-64"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.73"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-64"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-65"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.74"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-65"
+
+[[SpaceSegment.SatelliteSistem]]
+propagator = "SGP4"
+name = "SATELLITE-66"
+group = "LEO"
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.75"
+interface = "eth0"
+
+[SpaceSegment.SatelliteSistem.clone_VM]
+name_VM = "SATELLITE-66"
 
 [GroundSegment]
-	[[GroundSegment.GroundSistem]]
-		name = 'Ibi_ES'
-		group = 'GS'
-		latitude = 38.5942
-		longitude = -0.5696
-		height = 500.0
-		OS = 'debian' #ubuntu o alpine
-		username = 'debian'
-		password = 'debian'
-		is_external_vm = 1
-		is_docker = 1
-		ip_ext = '172.27.12.201'
-		interface = 'eth0'
-		[GroundSegment.GroundSistem.clone_VM]
-			name_VM = 'Ibi_ES'
+[[GroundSegment.GroundSistem]]
+name = "Ibi_ES"
+group = "GS"
+latitude = 38.5942
+longitude = -0.5696
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.80"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Barcelona_ES"
+group = "GS"
+latitude = 41.3851
+longitude = 2.1734
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.81"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Milan_IT"
+group = "GS"
+latitude = 45.4642
+longitude = 9.19
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.82"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Dublin_IE"
+group = "GS"
+latitude = 53.3498
+longitude = -6.2603
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.83"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Fairbanks_US"
+group = "GS"
+latitude = 64.8378
+longitude = -147.7164
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.84"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Seattle_US"
+group = "GS"
+latitude = 47.6062
+longitude = -122.3321
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.85"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Atlanta_US"
+group = "GS"
+latitude = 33.749
+longitude = -84.388
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.86"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Santiago_CL"
+group = "GS"
+latitude = -33.4489
+longitude = -70.6693
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.87"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "CapeTown_ZA"
+group = "GS"
+latitude = -33.9249
+longitude = 18.4241
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.88"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Sydney_AU"
+group = "GS"
+latitude = -33.8688
+longitude = 151.2093
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.89"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Tokyo_JP"
+group = "GS"
+latitude = 35.6762
+longitude = 139.6503
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.90"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
+
+[[GroundSegment.GroundSistem]]
+name = "Mumbai_IN"
+group = "GS"
+latitude = 19.076
+longitude = 72.8777
+height = 100.0
+OS = "debian"
+username = "debian"
+password = "debian"
+type = "container"
+ip_ext = "172.28.0.91"
+interface = "eth0"
+
+[GroundSegment.GroundSistem.clone_VM]
+name_VM = "ground-station"
 
 [Channels]
-	[[Channels.Channel]]
-		Node1 = 'LEO' #Group name
-		Node2 = 'GS'
-		Min_elevation_angle = 15.0		#[deg]
-		Threshold = 2000000000000.0			#[m]
-		Data_rate =  500			#[Mbit]
-		Packet_loss = 2.0			#[%]
-		Correlated_losses = 0.5		#[%] Emulate packet burst losses
-	[[Channels.Channel]]
-		Node1 = 'LEO' #Group name
-		Node2 = 'LEO'
-		Min_elevation_angle = 0.0		#[deg]
-		Threshold = 2000000000000.0			#[m]
-		Data_rate =  10000			#[Mbit]
-		Packet_loss = 0.5			#[%]
-		Correlated_losses = 0.0		#[%] Emulate packet burst losses
+[[Channels.Channel]]
+Node1 = "LEO"
+Node2 = "GS"
+Min_elevation_angle = 5.0
+Threshold = 4000000000000.0
+Data_rate = 10000
+Packet_loss = 0
+Correlated_losses = 0.0
+
+[[Channels.Channel]]
+Node1 = "LEO"
+Node2 = "LEO"
+Min_elevation_angle = 0.0
+Threshold = 5000000000.0
+Data_rate = 500
+Packet_loss = 0.5
+Correlated_losses = 0.3

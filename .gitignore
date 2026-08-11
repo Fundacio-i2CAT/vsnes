@@ -14,3 +14,4 @@ tc_teardown.batch
 Class/templates/ScenarioCZML.czml
 Class/templates/ScenarioCZML.czml.tmp
 simulation_time.txt
+test

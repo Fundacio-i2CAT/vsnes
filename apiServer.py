@@ -54,6 +54,49 @@ def loadConfigFile(config_path):
         logging.error(error_msg)
         return None
 
+def validateConfig(TOML):
+    """Structural validation of the loaded TOML. Returns (ok, errors)."""
+    from Class.Node import NODE_TYPES
+    from Class.routing import PROTOCOLS
+    errors = []
+    if not isinstance(TOML, dict):
+        return False, ['config is not a valid TOML mapping']
+    if not TOML.get('network'):
+        errors.append("missing 'network'")
+
+    # [Routing] protocol must be a registered protocol or 'none' (absent
+    # section is fine: scenario defaults to 'none' with a warning).
+    rp = TOML.get('Routing', {}).get('protocol')
+    if rp is not None and rp != 'none' and rp not in PROTOCOLS:
+        errors.append(f"[Routing] invalid protocol '{rp}' "
+                      f"(one of: none, {', '.join(sorted(PROTOCOLS))})")
+    sats = TOML.get('SpaceSegment', {}).get('SatelliteSistem', [])
+    gs = TOML.get('GroundSegment', {}).get('GroundSistem', [])
+    if not sats and not gs:
+        errors.append("no satellites or ground stations defined")
+    if not TOML.get('Channels', {}).get('Channel'):
+        errors.append("no Channels defined")
+
+    # Per-node validation: single lifecycle `type` key + per-type required keys.
+    for node in list(sats) + list(gs):
+        name = node.get('name', '<unnamed>')
+        if 'is_external_vm' in node or 'is_docker' in node:
+            errors.append(f"node {name}: 'is_external_vm'/'is_docker' are obsolete — "
+                          f"use type = one of {NODE_TYPES}")
+        ntype = node.get('type')
+        if ntype is None:
+            errors.append(f"node {name}: missing 'type' (one of {NODE_TYPES})")
+            continue
+        if ntype not in NODE_TYPES:
+            errors.append(f"node {name}: invalid type '{ntype}' (one of {NODE_TYPES})")
+            continue
+        if ntype != 'vm' and not node.get('ip_ext'):
+            errors.append(f"node {name}: 'ip_ext' required for type '{ntype}'")
+        if ntype == 'vm' and not node.get('clone_VM', {}).get('name_VM'):
+            errors.append(f"node {name}: clone_VM.name_VM required for type 'vm'")
+
+    return (len(errors) == 0), errors
+
 def InitScenario(TOML):
     """Initialize scenario from TOML configuration"""
     try:
@@ -148,16 +191,49 @@ def deleteAllVMs(scenario):
         logging.error(f"Error deleting all VMs: {e}")
         return False
 
+def compose_error_lines(output):
+    """Pull the real failure lines out of docker compose output.
+
+    Compose writes its per-container progress ('Container X  Creating') to
+    stderr, so a failed run buries the one line that matters — typically a
+    name conflict with a container left over from an earlier project — under
+    dozens of 'Creating'/'Created' lines. Returns the offending lines, or the
+    tail of the output if nothing matches the known error shapes.
+    """
+    hits = [ln.strip() for ln in (output or '').splitlines()
+            if ('Error' in ln or 'error' in ln
+                or 'no such service' in ln or 'Conflict' in ln)]
+    return hits or [ln.strip() for ln in (output or '').splitlines()[-5:] if ln.strip()]
+
+
 def run_docker_compose(action, services=None):
     """Run docker compose up -d / down for the node containers.
-    Returns (result_dict, http_status)."""
+    Returns (result_dict, http_status).
+
+    `up` is scoped to the LOADED SCENARIO: it never recreates running
+    containers (--no-recreate, a live k3s cluster must survive) and never
+    starts services outside the scenario's node set (+ registry). A caller-
+    supplied services list is validated against that set."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     compose_file = os.path.join(base_dir, 'docker-compose.yml')
     if not os.path.exists(compose_file):
         return {'error': f'docker-compose.yml not found in {base_dir}'}, 500
 
     if action == 'up':
-        cmd = ['docker', 'compose', 'up', '-d'] + list(services or [])
+        scn = global_state.get('scenario')
+        if scn is None:
+            return {'error': 'No scenario loaded. Use /api/load-config first — '
+                             'compose up is scoped to the scenario\'s nodes'}, 400
+        allowed = set(scn.compose_service_names()) | {'registry'}
+        if services:
+            bad = [s for s in services if s not in allowed]
+            if bad:
+                return {'error': f'services not in the loaded scenario: {bad}',
+                        'allowed': sorted(allowed)}, 400
+            targets = list(services)
+        else:
+            targets = sorted(allowed)
+        cmd = ['docker', 'compose', 'up', '-d', '--no-recreate', '--no-build'] + targets
     else:
         cmd = ['docker', 'compose', 'down']
 
@@ -172,8 +248,11 @@ def run_docker_compose(action, services=None):
 
     output = (proc.stdout + proc.stderr).strip()
     if proc.returncode != 0:
-        logging.error(f"docker compose {action} failed: {output}")
+        causes = compose_error_lines(output)
+        logging.error(f"docker compose {action} failed (exit {proc.returncode}): "
+                      + " | ".join(causes))
         return {'error': f'docker compose {action} failed (exit {proc.returncode})',
+                'causes': causes,
                 'output': output.splitlines()}, 500
 
     result = {'message': f'docker compose {action} completed successfully',
@@ -231,19 +310,43 @@ def upload_tle():
 
 @app.route('/api/load-config', methods=['POST'])
 def load_config():
-    """Load configuration file"""
+    """Stage 1 (load): load config.toml, validate it, and create the scenario
+    nodes. Does NOT start any VM/container. Optional JSON body:
+      {"isCzml": bool (default true), "isDockercompose": bool (default false)}
+    """
     config_path = 'config.toml'
     logging.info(f"Loading: {config_path}")
     TOML = loadConfigFile(config_path)
     if TOML is None:
         return jsonify({'error': 'Failed to load configuration file'}), 400
-    
+
+    ok, errors = validateConfig(TOML)
+    if not ok:
+        return jsonify({'error': 'Invalid configuration', 'details': errors}), 400
+
+    # Create the nodes (moved here from init-scenario).
+    Scenario_instance = InitScenario(TOML)
+    if Scenario_instance is None:
+        return jsonify({'error': 'Failed to create scenario nodes'}), 400
+
+    data = request.get_json(silent=True) or {}
+    isCzml = data.get('isCzml', True)
+    isDockercompose = data.get('isDockercompose', False)
+    if isCzml:
+        writeCZML(Scenario_instance)
+        global_state['is_czml_generated'] = True
+    if isDockercompose:
+        Scenario_instance.generate_docker_compose()  # stub
+
     global_state['config'] = TOML
+    global_state['scenario'] = Scenario_instance
     global_state['system_status'] = 'CONFIG_LOADED'
-    logging.info(f"Configuration loaded: {config_path}")
-    
+    logging.info(f"Configuration loaded and nodes created: {config_path}")
+
     return jsonify({
-        'message': f"Configuration file '{config_path}' loaded successfully",
+        'message': f"Configuration loaded and {Scenario_instance.get_number_of_nodes()} nodes created",
+        'isCzml': isCzml,
+        'isDockercompose': isDockercompose,
         'config_summary': {
             'network': TOML.get('network'),
             'satellites': len(TOML.get('SpaceSegment', {}).get('SatelliteSistem', [])),
@@ -254,31 +357,57 @@ def load_config():
 
 @app.route('/api/init-scenario', methods=['POST'])
 def init_scenario():
-    """Initialize scenario from loaded configuration"""
-    if global_state['config'] is None:
-        logging.warning(f"Trying to start simualation but no configuration was loaded")
-        return jsonify({'error': 'No configuration loaded. Use /api/load-config first'}), 400
-    
-    Scenario_instance = InitScenario(global_state['config'])
-    if Scenario_instance is None:
-        logging.error(f"Failed to initialize scenario from configuration")
-        return jsonify({'error': 'Failed to initialize scenario'}), 400
+    """Stage 2 (init/prepare): start/configure the nodes, install routing rules,
+    and apply the channel shaping — leaving the scenario ready to run. Runs in
+    the background; start checks readiness. Optional JSON body:
+      {"isVM": bool (default true), "password": str} — routing protocol comes from the toml [Routing] section
+    isVM=false skips ALL node/network config (contacts/timing only).
+    """
+    scn = global_state['scenario']
+    if scn is None:
+        return jsonify({'error': 'No scenario. Use /api/load-config first'}), 400
+    if global_state.get('system_status') in ['PREPARING_VMS', 'RUNNING_SIMULATION']:
+        return jsonify({'error': f"Conflict: System is currently {global_state['system_status']}."}), 409
 
-    global_state['scenario'] = Scenario_instance
-    global_state['is_czml_generated'] = False
-    global_state['system_status'] = 'SCENARIO_INIT'
+    data = request.get_json(silent=True) or {}
+    isVM = data.get('isVM', True)
+    if 'isOlsr' in data:
+        logging.warning("init-scenario: 'isOlsr' is deprecated and ignored — "
+                        "the routing protocol comes from the toml [Routing] section")
+    password = data.get('password')
 
-    # Always reconfigure VMs for the new scenario regardless of their current state
-    vm_proc = threading.Thread(target=Scenario_instance.start_VMs, daemon=True)
-    vm_proc.start()
-    Scenario_instance._vm_startup_process = vm_proc
-    logging.info("VM reconfiguration started in background")
-    
+    global_state['system_status'] = 'PREPARING_VMS'
+    scn._prepared = False
+    scn._prepare_error = None
+
+    def _prep():
+        # Whatever happens, leave PREPARING_VMS: it is the state that makes
+        # init/start return 409, so staying in it after the thread is gone
+        # locks the API out until a server restart. 'is_prepared' (not the
+        # status) is what distinguishes success from failure.
+        try:
+            scn.prepare_scenario(isVM=isVM, password=password)
+            scn._prepared = True
+            logging.info("prepare_scenario finished — scenario ready to run")
+        except Exception as e:
+            logging.error(f"prepare_scenario failed: {e}")
+            scn._prepared = False
+            scn._prepare_error = str(e)
+        finally:
+            global_state['system_status'] = 'SCENARIO_INIT'
+
+    t = threading.Thread(target=_prep, daemon=True)
+    t.start()
+    scn._prepare_thread = t
+    logging.info(f"Scenario preparation started (isVM={isVM}, "
+                 f"routing={scn._routing_protocol})")
+
     return jsonify({
-        'message': 'Scenario initialized successfully',
+        'message': 'Scenario preparation started',
+        'isVM': isVM,
+        'routing_protocol': scn._routing_protocol,
         'scenario_info': {
-            'number_of_nodes': Scenario_instance.get_number_of_nodes(),
-            'description': Scenario_instance.scenario_description()
+            'number_of_nodes': scn.get_number_of_nodes()
         }
     })
 
@@ -425,6 +554,20 @@ def compose_down():
     return jsonify(result), code
 
 
+@app.route('/api/compose/generate', methods=['POST'])
+def compose_generate():
+    """Generate docker-compose.yml from the loaded scenario (one service per
+    type='container' node + registry). The single source of truth for compose
+    generation — the MCP tool delegates here."""
+    scn = global_state.get('scenario')
+    if scn is None:
+        return jsonify({'error': 'No scenario loaded. Use /api/load-config first'}), 400
+    if not scn.generate_docker_compose():
+        return jsonify({'error': 'compose generation failed (no container nodes?)'}), 500
+    return jsonify({'message': 'docker-compose.yml generated',
+                    'services': scn.compose_service_names() + ['registry']})
+
+
 @app.route('/api/visualization/start', methods=['POST'])
 def start_visualization():
     """Start Cesium visualization only"""
@@ -444,37 +587,48 @@ def start_visualization():
 
 @app.route('/api/simulation/start', methods=['POST'])
 def start_simulation():
-    """Run both emulation and visualization"""
-    if global_state['scenario'] is None:
+    """Stage 3 (start): start ONLY the simulation clock. Preparation (init) must
+    be finished — if it is still running, returns a waiting message. The saved
+    isVM decides whether per-tick network updates apply; positions/timing always
+    advance. Also restarts the clock after a natural end (status
+    SIMULATION_ENDED): the rules are still applied, so it just replays from the
+    reset marker — no re-prepare needed. Optional JSON body to override the saved
+    values:
+      {"isVM": bool, "password": str}
+    """
+    scn = global_state['scenario']
+    if scn is None:
         return jsonify({'error': 'No scenario initialized'}), 400
-        
-    if global_state.get('system_status') in ['PREPARING_VMS', 'RUNNING_SIMULATION']:
-        return jsonify({'error': f"Conflict: System is currently {global_state['system_status']}."}), 409
-    
-    global_state['system_status'] = 'PREPARING_VMS'
-    data = request.get_json(silent=True) or {}
-    generate_czml = data.get('generate_czml', not global_state['is_czml_generated'])
-    password = data.get('password')
-    
-    if StartVMSimulation(global_state['scenario']):
-        logging.info("All VMs are running, proceeding to start full simulation")
-    else:
-        logging.info("VMs are starting up, please wait before starting full simulation")
-        return jsonify({'Starting VM': 'VMs are starting up, please wait before starting full simulation'}), 412
+    if global_state.get('system_status') == 'RUNNING_SIMULATION':
+        return jsonify({'error': 'Simulation is already running'}), 409
 
-    if startSimulation(global_state['scenario'], not generate_czml, True, password=password):
-        global_state['system_status'] = 'RUNNING_SIMULATION'
-        if generate_czml:
-            global_state['is_czml_generated'] = True
-        # Verify the emulator process actually started
-        emu_proc = getattr(global_state['scenario'], '_emulator_process', None)
-        if emu_proc is not None and not emu_proc.is_alive():
-            global_state['system_status'] = 'SCENARIO_INIT'
-            return jsonify({'error': 'Emulator process failed to start'}), 500
-        return jsonify({'message': 'Full emulation and visualization started successfully'})
-    else:
+    # Readiness: prepare (init) must have run and finished.
+    prep_t = getattr(scn, '_prepare_thread', None)
+    if prep_t is None:
+        return jsonify({'error': 'Scenario not prepared. Use /api/init-scenario first'}), 412
+    if prep_t.is_alive():
+        return jsonify({'message': 'Scenario is still preparing, please wait...'}), 202
+    if not getattr(scn, '_prepared', False):
+        return jsonify({'error': 'Scenario preparation failed — check logs'}), 500
+
+    data = request.get_json(silent=True) or {}
+    isVM = data.get('isVM')          # None -> use the value saved at init
+    password = data.get('password')  # None -> use the value saved at init
+
+    try:
+        scn.start_clock(isVM=isVM, password=password)
+    except Exception as e:
+        logging.error(f"start_clock failed: {e}")
+        return jsonify({'error': f'Failed to start simulation clock: {e}'}), 500
+
+    global_state['system_status'] = 'RUNNING_SIMULATION'
+    emu_proc = getattr(scn, '_emulator_process', None)
+    if emu_proc is not None and not emu_proc.is_alive():
+        # The scenario is still prepared — only the clock failed. Rolling back
+        # to PREPARING_VMS would 409 every later init/start attempt.
         global_state['system_status'] = 'SCENARIO_INIT'
-        return jsonify({'error': 'Failed to start full simulation'}), 500
+        return jsonify({'error': 'Clock thread failed to start'}), 500
+    return jsonify({'message': 'Simulation clock started', 'isVM': getattr(scn, '_isVM', True)})
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
@@ -485,11 +639,35 @@ def get_status():
         'config_loaded': global_state['config'] is not None,
         'is_czml_generated': global_state['is_czml_generated'],
         'cesium_running': global_state['cesium_process'] is not None,
-        'is_creating_VM': bool(getattr(global_state['scenario'], '_vm_startup_process', None))
+        'is_preparing': bool(global_state['scenario'] is not None
+                             and getattr(global_state['scenario'], '_prepare_thread', None) is not None
+                             and global_state['scenario']._prepare_thread.is_alive()),
+        'is_prepared': bool(global_state['scenario'] is not None
+                            and getattr(global_state['scenario'], '_prepared', False)),
+        # Back-compat alias (was: existence of the old VM startup thread).
+        'is_creating_VM': bool(global_state['scenario'] is not None
+                               and getattr(global_state['scenario'], '_prepare_thread', None) is not None
+                               and global_state['scenario']._prepare_thread.is_alive()),
+        # Why the last preparation failed (None if it succeeded or never ran).
+        # Without this a failed prepare is indistinguishable from one that
+        # simply hasn't finished: both just show "not prepared".
+        'prepare_error': getattr(global_state['scenario'], '_prepare_error', None)
+                         if global_state['scenario'] is not None else None
     }
     
     if global_state['scenario']:
-        status['number_of_nodes'] = global_state['scenario'].get_number_of_nodes()
+        scn = global_state['scenario']
+        status['number_of_nodes'] = scn.get_number_of_nodes()
+        # Live speed telemetry: configured multiplier vs the one the clock
+        # loop is actually sustaining (EMA over real tick periods), plus how
+        # many ticks overran their budget. Lets a degrading run be caught in
+        # its first minutes instead of after the campaign.
+        try:
+            status['configured_speed'] = scn.get_speed()
+        except Exception:
+            status['configured_speed'] = None
+        status['achieved_multiplier'] = getattr(scn, '_achieved_multiplier', None)
+        status['tick_overruns'] = getattr(scn, '_overrun_count', None)
         # Read simulation_time from file (child process can't share memory)
         sim_time_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "simulation_time.txt")
         if os.path.exists(sim_time_file):
@@ -506,8 +684,14 @@ def get_status():
         # Check if emulator process is still alive
         emu_proc = getattr(global_state['scenario'], '_emulator_process', None)
         if emu_proc is not None and not emu_proc.is_alive():
-            global_state['system_status'] = 'SCENARIO_INIT'
-            status['system_status'] = 'SCENARIO_INIT'
+            # Thread dead: distinguish a natural end (timeline finished, marker
+            # reset to zero, tc/OLSR rules STILL applied) from a fresh/stopped
+            # scenario. SIMULATION_ENDED means "rules still live — run to restart
+            # the clock, or stop to remove them".
+            ended = getattr(global_state['scenario'], '_ended', False)
+            new_status = 'SIMULATION_ENDED' if ended else 'SCENARIO_INIT'
+            global_state['system_status'] = new_status
+            status['system_status'] = new_status
         else:
             status['system_status'] = global_state.get('system_status', 'IDLE')
     

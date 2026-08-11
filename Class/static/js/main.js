@@ -40,6 +40,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateStatusDisplay('Simulation is running (restored on reload)', 'normal');
         } else if (status.system_status === 'PREPARING_VMS') {
             updateStatusDisplay('VMs are being prepared...', 'normal');
+        } else if (status.prepare_error) {
+            // A finished-but-failed preparation used to leave the status stuck
+            // on PREPARING_VMS, so the UI claimed work was in progress while
+            // nothing was running. Show the reason instead.
+            updateStatusDisplay(`Scenario preparation failed: ${status.prepare_error}`, 'error');
+        } else if (status.is_prepared) {
+            updateStatusDisplay('Scenario prepared — ready to run.', 'normal');
         }
     } catch (e) {
         console.warn("Could not restore simulation state on load:", e);

@@ -23,8 +23,8 @@ Key endpoints:
 | `GET` | `/api/health` | Health check |
 | `POST` | `/api/upload-config` | Upload a TOML configuration file |
 | `POST` | `/api/upload-tle` | Upload a TLE file |
-| `POST` | `/api/load-config` | Load `config.toml` into the system |
-| `POST` | `/api/init-scenario` | Initialize the scenario from loaded config |
+| `POST` | `/api/load-config` | **Stage 1 (load):** load `config.toml`, validate it, and create the nodes. Optional body `{"isCzml": true, "isDockercompose": false}` |
+| `POST` | `/api/init-scenario` | **Stage 2 (init/prepare):** start/validate the nodes per their `type`, gate + start the routing protocol selected in the toml's `[Routing]` section, and apply the channel shaping — runs in the background. Optional body `{"isVM": true, "password": "..."}` (`isVM=false` skips all node/network config and computes contacts/timing only) |
 | `GET` | `/api/scenario` | Get current scenario description |
 | `POST` | `/api/write-czml` | Generate the CZML file for Cesium |
 | `POST` | `/api/start-vms` | Start all VMs |
@@ -34,14 +34,20 @@ Key endpoints:
 | `DELETE` | `/api/delete-all-vms` | Delete all VMs |
 | `POST` | `/api/compose/up` | Start the Docker node containers (`docker compose up -d`); optional JSON body `{"services": ["satellite-1", ...]}` to start a subset |
 | `POST` | `/api/compose/down` | Stop and remove the Docker node containers (`docker compose down`) |
-| `POST` | `/api/simulation/start` | Start full emulation and visualization |
+| `POST` | `/api/simulation/start` | **Stage 3 (start):** start only the simulation clock (init must have finished). Also restarts the clock after a natural end. Optional body `{"isVM": ..., "password": ...}` to override the saved values |
 | `POST` | `/api/visualization/start` | Start visualization only |
-| `POST` | `/api/simulation/stop` | Stop the running simulation |
+| `POST` | `/api/simulation/stop` | Stop the run and **remove the channel-shaping/routing rules**, keeping the loaded scenario so the clock can be re-started. Optional body `{"password": "..."}` |
 | `GET` | `/api/status` | Get system status and simulation progress |
-| `POST` | `/api/reset` | Stop simulation and reset all state |
+| `POST` | `/api/reset` | Full teardown — stop, remove rules, and wipe all state back to `IDLE` |
 | `GET` | `/api/help` | List all available endpoints |
 
-The API tracks system state across the lifecycle (`IDLE → CONFIG_LOADED → SCENARIO_INIT → PREPARING_VMS → RUNNING_SIMULATION`) and returns `409 Conflict` responses for invalid transitions.
+The API tracks system state across the lifecycle (`IDLE → CONFIG_LOADED → PREPARING_VMS → RUNNING_SIMULATION → SIMULATION_ENDED`) and returns `409 Conflict` responses for invalid transitions. The lifecycle is split into three explicit stages:
+
+1. **load** — parse `config.toml`, validate, and create the nodes.
+2. **init / prepare** — configure the nodes, install the per-link rules, and apply the channel shaping (the one-time network setup). After this the scenario is ready but the clock is not moving.
+3. **start** — advance the simulation clock only (positions + timing; per-tick network updates when enabled).
+
+Reaching the end of the timeline **stops the clock and resets the time marker to zero, but leaves the channel shaping and rules applied** (`SIMULATION_ENDED`). From there, `start` replays from the reset marker without re-preparing, while `stop` (or `reset`) is what actually removes the rules. This keeps the network state intact at the end of a run instead of tearing it down underneath still-running nodes.
 
 To start (launched automatically by `SatelliteEmulator.py`):
 ```bash
@@ -60,9 +66,12 @@ Available tools:
 
 | Tool | Description |
 |------|-------------|
-| `prepare_simulation` | Load config and initialize scenario |
-| `start_simulation` | Start emulation and visualization |
-| `stop_simulation` | Stop and reset the emulator |
+| `load_scenario` | **Stage 1:** load `config.toml`, validate, and create the nodes |
+| `init_scenario` | **Stage 2:** prepare the scenario — configure nodes, install rules, apply channel shaping |
+| `prepare_simulation` | Back-compat one-shot: load + init with defaults |
+| `start_simulation` | **Stage 3:** start (or restart) the simulation clock |
+| `stop_simulation` | Stop the run and remove the rules, **keeping the scenario** so it can be re-started |
+| `reset_system` | Full teardown — stop, remove rules, and wipe the scenario back to `IDLE` |
 | `get_emulator_status` | Get full system status |
 | `compose_up` | Start the Docker node containers (optionally a list of service names) |
 | `compose_down` | Stop and remove the Docker node containers |
@@ -134,6 +143,8 @@ All server components write structured logs to `/tmp/log/snes.log` with timestam
 - **REST API**: Full HTTP API for programmatic control of the emulator lifecycle.
 - **MCP Server**: AI-agent-friendly tool interface via the Model Context Protocol.
 - **Simulation NTP**: Custom NTP server serving simulation time to emulated VMs.
+- **Routing Protocol Selection**: Choose `olsrd`, `babel`, or `none` per scenario (`[Routing]` in `config.toml`) — VSNES gates the daemon's discovery to in-LOS neighbours and manages its full lifecycle (start/restart/stop) automatically; only one protocol's rules are ever installed.
+- **Mixed Node Types**: `vm`, `vm_external`, `container`, `container_external` per node — internal VMs/containers are created and torn down by VSNES; external ones are only validated over the network.
 
 ---
 
@@ -190,7 +201,7 @@ Simulation-aware NTP server. Serves emulator simulation time to nodes in the emu
 ---
 
 ### 6. **`docker-compose.yml`**
-Defines all satellite and ground station containers for Docker-based deployments on the `vsnes_net` (172.27.12.0/24) bridge network.
+Generated by `Scenario.generate_docker_compose()` from the loaded scenario: one service per `type='container'` node (real `container_external` nodes are never included — VSNES doesn't manage them) plus a local `registry` service, on the `olsr_net` bridge (subnet derived from the first node's `ip_ext`, typically `172.28.0.0/24`). Regenerate it via `POST /api/load-config {"isDockercompose": true}` or `POST /api/compose/generate` — don't hand-edit it.
 
 ---
 
@@ -269,19 +280,19 @@ Available interactive commands:
 | Command | Aliases | Description |
 |---------|---------|-------------|
 | `help` | | Show all available actions |
-| `load_scenario` | `load` | Load `config.toml` and initialize the scenario |
+| `load` | `load_scenario` | **Stage 1:** ask for the config path, then load + validate it and create the nodes |
+| `init` | `init_scenario`, `prepare` | **Stage 2:** prepare the scenario — asks for the sudo password and the `isVM` flag, then starts/validates nodes per their `type`, gates + starts the toml-selected routing protocol, and applies channel shaping |
 | `scenario` | | Display loaded nodes and their types |
 | `start_vms` | `vm` | Create or start containers/VMs for all nodes |
 | `compose_up [services...]` | `compose up` | Start the Docker node containers via the API (`docker compose up -d`); optionally name specific services, e.g. `compose_up satellite-1 ibi_es` |
 | `compose_down` | `compose down` | Stop and remove the Docker node containers via the API (`docker compose down`) |
 | `write_czml` | | Generate `ScenarioCZML.czml` for Cesium |
-| `run_all` | `run` | Run full emulation and Cesium visualization |
-| `run_emulator` | `emu`, `emulator`, `run_emu` | Run emulation only (no Cesium) |
-| `run_cesium` | `cesium` | Run Cesium visualization only |
-| `stop` | | Stop the running simulation |
+| `run` | `run_all`, `emu`, `cesium` | **Stage 3:** start the simulation clock (init must have finished). Also restarts the clock after a natural end |
+| `stop` | | Stop the run and remove the rules; keeps the scenario (re-run with `run`) |
+| `reset` | | Full teardown — stop, remove rules, and wipe the scenario to `IDLE` |
 | `shutdown_vms` | | Shut down all nodes |
 | `delete_vm` | `delete` | Delete a specific VM or all VMs |
-| `exit` | | End the program (prompts to delete VMs) |
+| `exit` | | Detach the controller — **leaves the sim and rules running**; use `stop`/`reset` first to tear down |
 
 ### API Mode
 
@@ -305,17 +316,22 @@ curl -X POST -H "Content-Type: application/json" \
      -d '{"services": ["satellite-1", "satellite-2", "satellite-3", "ibi_es"]}' \
      http://localhost:5050/api/compose/up
 
-# 3. Load and initialize
+# 3. Load (create nodes), then init/prepare (start/validate nodes per type,
+#    gate + start the toml-selected routing protocol, apply channel shaping —
+#    runs in the background; poll /api/status until ready)
 curl -X POST http://localhost:5050/api/load-config
-curl -X POST http://localhost:5050/api/init-scenario
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"isVM": true, "password": "..."}' \
+     http://localhost:5050/api/init-scenario
 
-# 4. Start simulation
+# 4. Start the clock (start again later to replay after a natural end)
 curl -X POST http://localhost:5050/api/simulation/start
 
-# 5. Monitor
+# 5. Monitor (RUNNING_SIMULATION → SIMULATION_ENDED when the timeline finishes;
+#    the rules stay applied at the end)
 curl http://localhost:5050/api/status
 
-# 6. Stop
+# 6. Stop — removes the rules but keeps the scenario (use /api/reset for a full wipe)
 curl -X POST http://localhost:5050/api/simulation/stop
 
 # 7. Tear down the containers
@@ -353,8 +369,8 @@ To connect from Claude Desktop, add the following to your `claude_desktop_config
 1. AI calls `get_config_guide` to learn what parameters to collect
 2. AI interviews the user and calls `generate_config_toml` to write `config.toml`
 3. AI calls `generate_docker_compose` to create the container manifest
-4. AI calls `prepare_simulation` → `start_simulation` to launch the emulation
-5. AI monitors progress with `get_emulator_status` and stops with `stop_simulation`
+4. AI calls `load_scenario` → `init_scenario` → `start_simulation` to launch the emulation (or `prepare_simulation` for the one-shot load+init)
+5. AI monitors progress with `get_emulator_status`; at the end of the timeline the run stops but the rules stay applied (`start_simulation` replays it), and `stop_simulation` / `reset_system` tears it down
 
 ---
 
@@ -365,13 +381,27 @@ The configuration file (`config.toml`) defines the parameters for VSNES. Below i
 ---
 
 ### 1. Network Configuration
-- **`network`**: Specifies the subnet for the emulated network (in CIDR notation).
-- **`network_ext`**: Specifies the subnet of the network which hosts the external domains/VMs in the Relay mode (in CIDR notation).
+- **`network`**: Specifies the subnet for the emulated network (in CIDR notation) — the flat `10.0.0.x`-style address every node gets as its per-scenario emulated IP.
+- **`network_ext`**: Specifies the subnet of the network that hosts the nodes' management/external addresses (`ip_ext`, in CIDR notation) — the Docker bridge or host-reachable network for classic-VM/external nodes.
 - **`unicast_flooding`**: If `1`, the virtual switch of brSATEMU will not logically map MAC addresses with ports. This means that all the traffic received from one port will be broadcasted to all the other ports. If `0`, the virtual switch will map MAC addresses and forward traffic only to the correct destination port.
+- **`host_interface`** *(optional)*: The host NIC used for classic-VM vxlan tunnels. Auto-detected (first non-loopback, non-libvirt interface) if omitted.
 
 ---
 
-### 2. Time Configuration
+### 2. Routing Protocol
+
+```toml
+[Routing]
+	protocol = 'olsrd'   # olsrd | babel | none
+```
+
+Selects which mesh routing daemon VSNES gates and manages inside every container node. Only ONE protocol's firewall rules and daemon are ever installed — switching protocols (or to `none`) between runs always converges cleanly, even without a clean stop first. `none` applies netem channel shaping only, with no routing daemon and no per-pair firewall gating. Missing the `[Routing]` section defaults to `none` (with a warning).
+
+Protocols are a small registry in `Class/routing.py` — see the module docstring ("Adding a routing protocol") to add one (e.g. an experimental QUIC/DTN router): each entry declares its firewall binary/chain/gating-port and daemon start/stop commands, and Channel.py drives any entry generically.
+
+---
+
+### 3. Time Configuration
 - **`TimeInterval`**: Time step for the simulation in minutes.
 - **`Contact_speed`**: Speed multiplier for contact periods.
 - **`Non_contact_speed`**: Speed multiplier for non-contact periods.
@@ -380,41 +410,60 @@ The configuration file (`config.toml`) defines the parameters for VSNES. Below i
 
 ---
 
-### 3. Space Segment (Satellites)
+### 4. Node Type
+
+Every satellite and ground station carries one required **`type`** key — the single switch that decides how VSNES creates it, reaches it, and tears it down. There is no back-compat with older `isVM`/`is_external_vm`/`is_docker` flags; a config using them is rejected at `load-config` with a clear per-node error.
+
+| `type` | Lifecycle | Reached via |
+|---|---|---|
+| `vm` | Internal libvirt VM: cloned from `clone_VM.name_VM` with `virt-clone` (machine-id reset before first boot so DHCP leases don't collide), started/resumed with `virsh` | SSH, for configuration only |
+| `vm_external` | Never created/destroyed by VSNES — must already be running | SSH; init fails fast (~seconds, not a blind multi-minute retry) if unreachable |
+| `container` | Local Docker container: VSNES generates `docker-compose.yml` and brings up exactly the missing services (`--no-recreate --no-build` — a live cluster inside is never disturbed) | `docker exec` |
+| `container_external` | A container on another host — never created/removed by VSNES | validated over the network like `vm_external` |
+
+Required keys per type:
+- **`ip_ext`**: required for every type except `vm` (internal VMs get their address from `virsh domifaddr`).
+- **`clone_VM.name_VM`**: required only for `type = 'vm'` — the base libvirt domain to clone.
+- **`interface`**: always required — the node's NIC (`eth0` for containers, the VM's real NIC name, e.g. `enp1s0`, for VMs).
+
+Mixed scenarios are supported (e.g. a container constellation with one `vm_external` ground station) — VSNES configures each node type appropriately in the same run, including data-plane shaping (netem) across both the Docker/IFB path and the classic VLAN+vxlan path.
+
+### 5. Space Segment (Satellites)
 - **`TLE`**: Path to the TLE file containing satellite orbital data.
 - **`SatelliteSistem`**: Defines individual satellites.
   - **`propagator`**: Orbit propagation model (`SGP4` or `TwoBody`).
-  - **`Service`**: Satellite service type (`Standard` or `Relay`).
   - **`name`**: Name of the satellite.
   - **`group`**: Group name (e.g., `LEO` for Low Earth Orbit).
-  - **`OS`**: Operating system of the satellite's VM (`ubuntu` or `alpine`).
-  - **`username`**: Username for the VM.
-  - **`password`**: Password for the VM.
-  - **`isVM`**: Indicates if the satellite is a virtual machine (`1` for true, `0` for false).
-  - **`ip_ext`**: External IP address of the VM.
+  - **`OS`**: Operating system of the satellite's node (`debian`, `ubuntu`, or `alpine`).
+  - **`username`**: Username for SSH/container access.
+  - **`password`**: Password for SSH/container access.
+  - **`type`**: Node lifecycle type — see [Node Type](#4-node-type) above.
+  - **`ip_ext`**: Management/external IP address (required for all types except `vm`).
   - **`interface`**: Network interface name.
-  - **`clone_VM`**: Configuration for cloning the VM.
+  - **`clone_VM`**: Only meaningful for `type = 'vm'`.
     - **`name_VM`**: Name of the base VM to clone.
 
 ---
 
-### 4. Ground Segment (Ground Stations)
+### 6. Ground Segment (Ground Stations)
 - **`GroundSistem`**: Defines individual ground stations.
   - **`name`**: Name of the ground station.
   - **`group`**: Group name (e.g., `GS` for Ground Station).
   - **`latitude`**: Latitude of the ground station in degrees.
   - **`longitude`**: Longitude of the ground station in degrees.
   - **`height`**: Height of the ground station above sea level in meters.
-  - **`OS`**: Operating system of the ground station's VM (`ubuntu` or `alpine`).
-  - **`username`**: Username for the VM.
-  - **`password`**: Password for the VM.
+  - **`OS`**: Operating system of the ground station's node (`debian`, `ubuntu`, or `alpine`).
+  - **`username`**: Username for SSH/container access.
+  - **`password`**: Password for SSH/container access.
+  - **`type`**: Node lifecycle type — see [Node Type](#4-node-type) above.
+  - **`ip_ext`**: Management/external IP address (required for all types except `vm`).
   - **`interface`**: Network interface name.
-  - **`clone_VM`**: Configuration for cloning the VM.
+  - **`clone_VM`**: Only meaningful for `type = 'vm'`.
     - **`name_VM`**: Name of the base VM to clone.
 
 ---
 
-### 5. Channels (Communication Links)
+### 7. Channels (Communication Links)
 - **`Channel`**: Defines communication links between nodes.
   - **`Node1`**: Group name of the first node (e.g., `LEO` for satellites).
   - **`Node2`**: Group name of the second node (e.g., `GS` for ground stations).
@@ -428,7 +477,7 @@ The configuration file (`config.toml`) defines the parameters for VSNES. Below i
 
 ### Notes
 - Ensure that the TLE file specified in the `SpaceSegment` section exists and contains valid TLE data. `sample.tle` contains a sample TLE file.
-- The `clone_VM` section is optional and only required if you are cloning virtual machines for the emulation.
+- The `clone_VM` section is only required for `type = 'vm'` nodes.
 - The `Channels` section allows you to define multiple communication links between nodes.
 - libvirt implements DHCP, so if you want to avoid modifying the configuration of each VM to allocate a static IP:
   - Get the MAC address of the VM: `$ virsh domiflist <VM_name>`
@@ -542,12 +591,3 @@ Find more information at https://i2cat.net/tech-transfer/
 Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. See https://www.gnu.org/licenses/agpl-3.0.en.html.
 
 For licensing enquiries: techtransfer@i2cat.net
-
-## Citation
-
-If you use this software in academic work, please cite:
-
-> Ruiz-de-Azúa, J. A., Lopez, U., Avila, J., & Benítez, I.  
-> *VSNeS: Virtual Satellite Network Simulator* [Software].  
-> Fundació i2CAT.  
-> GitHub repository: https://github.com/Fundacio-i2CAT/vsnes
