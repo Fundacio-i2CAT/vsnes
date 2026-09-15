@@ -2,7 +2,7 @@
 from Class.Satellite import Satellite
 from Class.Ground_Station import GroundStation
 from Class.Time_parameters import time_parameters
-from Class.Channel import channel
+from Class.Channel import channel, nolos_netem
 from Class.routing import get_protocol
 
 from skyfield.api import load
@@ -51,15 +51,10 @@ class scenario:
 			self._time_parameters = time_parameters(TOMLfile['Time'])
 		self._node_list = []
 
-		try:
-			self._channel = channel(TOMLfile['Channels'])
-		except KeyError:
-			error_msg = f"Missing 'Channels' configuration"
-			logging.error(error_msg)
-			raise KeyError(error_msg)
-
 		# [Routing] protocol selection (Class/routing.py registry). Absent
-		# section -> 'none' (netem shaping only, no gating, no daemon).
+		# section -> 'none' (netem shaping only, no gating, no daemon). Read
+		# BEFORE the channel is built: it decides how a closed contact window
+		# is shaped (hard cut vs delay only — see Channel.nolos_netem()).
 		self._routing_protocol = TOMLfile.get('Routing', {}).get('protocol', 'none')
 		get_protocol(self._routing_protocol)   # validate at load time
 		if 'Routing' not in TOMLfile:
@@ -67,6 +62,13 @@ class scenario:
 			                "protocol = 'none' (no mesh routing daemon)")
 		else:
 			logging.info(f"Routing protocol: {self._routing_protocol}")
+
+		try:
+			self._channel = channel(TOMLfile['Channels'], self._routing_protocol)
+		except KeyError:
+			error_msg = f"Missing 'Channels' configuration"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
 
 
 		self._nNodes = 0
@@ -322,7 +324,7 @@ class scenario:
 							rate = 100.0
 						tc_up.append(f'class add dev {ifb} parent 1: classid 1:{j} htb rate {rate}mbit')
 						if delay == -2 or delay == -1:
-							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem loss 100%')
+							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: {nolos_netem(self._routing_protocol)}')
 						else:
 							try:
 								losses = f"{Ch['Packet_loss']}%"
@@ -626,7 +628,7 @@ class scenario:
 			"    ports:",
 			'      - "5001:5000"',
 			"    volumes:",
-			"      - ./registry-data:/var/lib/registry",
+			"      - ./test/registry-data:/var/lib/registry",
 			"    networks:",
 			"      olsr_net:",
 			"        ipv4_address: 172.28.0.250",
