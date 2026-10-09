@@ -2664,7 +2664,7 @@ services:
     ports:
       - "5001:5000"
     volumes:
-      - ./registry-data:/var/lib/registry
+      - ./test/registry-data:/var/lib/registry
     networks:
       olsr_net:
         ipv4_address: 172.28.0.250

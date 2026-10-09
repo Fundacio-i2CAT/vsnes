@@ -3,17 +3,17 @@ network_ext = "172.28.0.0/24"
 unicast_flooding = 0
 
 [Routing]
-protocol = "olsrd"
+protocol = "none"
 
 [Time]
 TimeInterval = 0.25
-Contact_speed = 5.0
-Non_contact_speed = 5.0
-start_datetime = "2026-07-10 16:38:00"
-end_datetime = "2026-07-10 19:00:00"
+Contact_speed = 4.0
+Non_contact_speed = 4.0
+start_datetime = "2026-07-13 05:11:00"
+end_datetime = "2026-07-14 16:38:00"
 
 [SpaceSegment]
-TLE = "iridium66.tle"
+TLE = "walker66.tle"
 [[SpaceSegment.SatelliteSistem]]
 propagator = "SGP4"
 name = "SATELLITE-1"

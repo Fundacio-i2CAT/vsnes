@@ -76,6 +76,31 @@
 
 ---
 
+### Routing
+1. **`routing.py`**
+   - **Purpose**: Registry of mesh routing protocols. Exactly one is active per scenario, selected with `[Routing] protocol = 'olsrd' | 'babel' | 'none'` in `config.toml` (`none` = netem shaping only, no daemon).
+   - **Usage**:
+     - `get_protocol(name)` returns the `RoutingProtocol` entry, `None` for `'none'`, and raises on unknown names so config errors surface at load time.
+     - Each `RoutingProtocol` declares its firewall binary, dedicated chain (`VSNES_OLSR`, `VSNES_BABEL`), how out-of-LOS peers are dropped (`src_ip` for OLSR, `src_mac` for babel's IPv6 link-local hellos), the gated UDP port (698 / 6696), and the `routing-ctl` start/stop commands.
+     - Its methods build the shell lines that set up/tear down the chain, add/remove per-peer DROP rules, and start/stop the daemon; `Channel.py` batches them into one `docker exec` per node.
+     - To add a protocol, add one entry to `PROTOCOLS` (plus `routing-ctl` support in the node image) — see the module docstring, "Adding a routing protocol".
+   - **Related Files**:
+     - Used by `Scenario.py` (validates the protocol at load) and `Channel.py` (applies the gating and manages the daemon lifecycle).
+
+---
+
+### Orbital Data Generation
+1. **`tle_generator.py`**
+   - **Purpose**: Generates a TLE file for N satellites in one orbital plane — a full evenly spaced ring by default, or a tight arc with `--spacing-deg` so all satellites stay in line of sight of each other.
+   - **Usage**:
+     - Satellites are named `<prefix><n>` (default `SATELLITE-1..N`) so they match the satellite names in `config.toml`. Defaults reproduce the walker66 orbit (86.4° inclination, 14.35663288 rev/day).
+     - CLI: `python3 Class/tle_generator.py 5 test/configs/plane5.tle` — options `--prefix`, `--first-index`, `--inclination`, `--raan`, `--altitude-km` (overrides `--mean-motion`), `--mean-motion`, `--phase-offset`, `--spacing-deg`, `--epoch`, `--overwrite`.
+     - Python: `generate_tle_text(...)` returns the TLE text; `write_tle(path, ...)` writes it (refuses to overwrite unless `overwrite=True`).
+   - **Related Files**:
+     - Backs the `generate_tle` tool in `mcpServer.py`.
+
+---
+
 ### Time Management
 1. **`Time_parameters.py`**
    - **Purpose**: Manages time-related settings for the emulation.

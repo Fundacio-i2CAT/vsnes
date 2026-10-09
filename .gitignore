@@ -15,3 +15,8 @@ Class/templates/ScenarioCZML.czml
 Class/templates/ScenarioCZML.czml.tmp
 simulation_time.txt
 test
+# Jekyll docs site build output
+docs/_site/
+docs/.jekyll-cache/
+docs/.sass-cache/
+docs/Gemfile.lock

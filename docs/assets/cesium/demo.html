@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNES — Paper View</title>
+    <title>VSNES — Static Demo</title>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
@@ -16,20 +16,140 @@
             overflow: hidden;
             background: #ffffff;
         }
-        /* hide any residual Cesium chrome */
-        .cesium-viewer-bottom,
-        .cesium-viewer-toolbar,
-        .cesium-viewer-animationContainer,
-        .cesium-viewer-timelineContainer,
-        .cesium-viewer-fullscreenContainer {
-            display: none !important;
-        }
+        .control-panel { bottom: 56px; max-height: calc(100vh - 160px); }
+        .toggle-button { bottom: 56px; }
     </style>
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/responsive-fixes.css" rel="stylesheet">
 </head>
 
 <body>
     <div id="cesiumContainer"></div>
     <div id="hiddenCredits" style="display:none"></div>
+
+    <!-- Control Panel -->
+    <div id="controlPanel" class="control-panel">
+        <div class="control-panel-header">
+            <h2 class="control-panel-title">Mission Control</h2>
+            <button id="closeControlPanel" class="btn-close btn-icon" aria-label="Close panel">
+                <img src="assets/images/icons/close.png" alt="Close">
+            </button>
+        </div>
+
+        <!-- Configuration Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Configuration</h3>
+
+            <div class="form-group">
+                <button id="genConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/download.png" alt="Settings">
+                    Generate Configuration
+                </button>
+                <div class="file-input-container">
+                    <input type="file" id="configFile" class="file-input" accept=".toml">
+                    <label for="configFile" class="file-input-label">
+                        <img src="assets/images/icons/upload.png" alt="Upload"
+                            class="btn-icon-img">
+                        Select Config File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/file.png" alt="Upload">
+                    Upload Config
+                </button>
+            </div>
+
+            <div class="form-group">
+                <div class="file-input-container">
+                    <input type="file" id="tleFile" class="file-input" accept=".tle">
+                    <label for="tleFile" class="file-input-label">
+                        <img src="assets/images/icons/upload.png" alt="Upload"
+                            class="btn-icon-img">
+                        Select TLE File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadTLEBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/file.png" alt="Upload">
+                    Upload TLE
+                </button>
+            </div>
+
+            <button id="loadConfigBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/settings.png" alt="Settings">
+                Load Configuration
+            </button>
+
+
+            <button id="initScenarioBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/settings.png" alt="Settings">
+                Init Scenario
+            </button>
+
+            <button id="stopAllVMsBtn" class="btn btn-secondary btn-icon">
+                <img src="assets/images/icons/stop.png" alt="Settings">
+                Stop all VMs
+            </button>
+
+            <button id="loadAndViewTLEBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/eye.png" alt="View">
+                Load & View TLE
+            </button>
+
+        </section>
+
+        <!-- Simulation Control Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Simulation Control</h3>
+
+            <div class="checkbox-container">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="runVmsCheckbox">
+                    <span class="checkmark"></span>
+                </label>
+                <span>Run Simulation</span>
+            </div>
+
+            <div class="d-flex justify-between mt-2">
+                <button id="startSimulationBtn" class="btn btn-success btn-icon" style="width: 48%;">
+                    <img src="assets/images/icons/play.png" alt="Play">
+                    Start
+                </button>
+                <button id="stopSimulationBtn" class="btn btn-danger btn-icon" style="width: 48%;">
+                    <img src="assets/images/icons/stop.png" alt="Stop">
+                    Stop
+                </button>
+            </div>
+            <button id="getStatusBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="assets/images/icons/status.png" alt="Status">
+                Get Status
+            </button>
+            <button id="reloadCzmlBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="assets/images/icons/eye.png" alt="Reload">
+                Reload CZML
+            </button>
+        </section>
+
+        <!-- Status Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">System Status</h3>
+
+            <div class="d-flex align-center mb-1">
+                <span id="statusMessage" class="status-message status-normal ml-1">Static demo — controls are not functional</span>
+            </div>
+
+            <div class="d-flex align-center mt-1 mb-1">
+                <span id="simulationTimeDisplay" class="status-message status-normal ml-1">Sim Time: replay of a saved scenario</span>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Toggle Button (initially hidden) -->
+    <button id="toggleControlPanel" class="toggle-button" style="display: none;">
+        <img src="assets/images/icons/menu.png" alt="Menu">
+    </button>
 
     <script>
         // ---- figure style ------------------------------------------------
@@ -49,14 +169,15 @@
 
         // ---- viewer: no controls, white scene ----------------------------
         const viewer = new Cesium.Viewer("cesiumContainer", {
-            animation: false,
-            timeline: false,
+            animation: true,
+            timeline: true,
             baseLayerPicker: false,
             geocoder: false,
-            homeButton: false,
-            sceneModePicker: false,
-            navigationHelpButton: false,
-            fullscreenButton: false,
+            homeButton: true,
+            sceneModePicker: true,
+            navigationHelpButton: true,
+            fullscreenButton: true,
+            fullscreenElement: document.body,
             selectionIndicator: false,
             infoBox: false,
             shouldAnimate: true,
@@ -215,7 +336,7 @@
             });
             viewer.dataSources.add(ds);
             viewer.clock.shouldAnimate = true;
-            startServiceOverlay(ds);
+            // service overlay needs the live /servicePlacement feed — not available in the static demo
         }).catch(err => console.error("Error loading CZML:", err));
 
         // ---- service overlay ----------------------------------------------
@@ -283,6 +404,20 @@
             refresh();
             setInterval(refresh, SERVICE_POLL_MS);
         }
+    </script>
+
+    <script>
+        // Visual only: collapse / expand the control panel, as in the real dashboard.
+        (function () {
+            const panel = document.getElementById("controlPanel");
+            const button = document.getElementById("toggleControlPanel");
+            function toggle() {
+                panel.classList.toggle("hidden");
+                button.style.display = panel.classList.contains("hidden") ? "flex" : "none";
+            }
+            button.addEventListener("click", toggle);
+            document.getElementById("closeControlPanel").addEventListener("click", toggle);
+        })();
     </script>
 </body>
 

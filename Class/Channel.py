@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import subprocess
 import threading
 import logging
@@ -7,6 +8,44 @@ from Class.Satellite import Satellite
 from Class.routing import get_protocol
 from czml import czml
 import numpy as np
+
+
+# Netem for a closed contact window. See test/HANDOVER-2026-09-15.md §2.
+NO_LOS_DELAY_MS  = float(os.getenv("VSNES_NOLOS_DELAY_MS",  "400"))
+NO_LOS_JITTER_MS = float(os.getenv("VSNES_NOLOS_JITTER_MS", "40"))
+NO_LOS_LOSS_PCT  = float(os.getenv("VSNES_NOLOS_LOSS_PCT",  "0"))
+
+
+def nolos_netem(routing_protocol: str = 'none') -> str:
+    """netem spec applied to a pair whose contact window is closed.
+
+    The routing protocol decides whether a closed window may be a hard cut:
+
+    'none'    no daemon can route around a dropped link, so 100% loss is a
+              PERMANENT partition of that pair — measured, only 19/66
+              satellites could still reach the master, and any control plane
+              riding the mesh dies with it. The window is therefore expressed
+              as delay alone and nothing is dropped.
+    selected  olsrd/babel re-route around the gated pair (58/66 reached the
+              master that way), so the physically faithful hard cut is safe.
+
+    VSNES_NOLOS_DELAY_MS=0 is an escape hatch that opts 'none' back into the
+    hard cut (it is a no-op with a protocol selected — that is already a hard
+    cut). It re-creates the permanent partition the 'none' branch avoids, so
+    it is only for deliberately testing that failure.
+    """
+    if NO_LOS_DELAY_MS <= 0 or get_protocol(routing_protocol) is not None:
+        return "netem loss 100%"
+    spec = f"netem delay {NO_LOS_DELAY_MS:g}ms {NO_LOS_JITTER_MS:g}ms"
+    # Default 0: under 'none' a dropped packet has no alternate path.
+    if NO_LOS_LOSS_PCT > 0:
+        spec += f" loss {NO_LOS_LOSS_PCT:g}%"
+    return spec
+
+
+def killed_netem() -> str:
+    """netem for a node deliberately killed: a real failure stays a hard cut."""
+    return "netem loss 100%"
 import json
 
 # GLOBAL CONSTANTS
@@ -24,9 +63,15 @@ POSITIONS_FILE = 'Positions/nodes.json'
 class channel:
 	'''A channel object defines the delays between nodes'''
 
-	def __init__(self, channel):
+	def __init__(self, channel, routing_protocol='none'):
+		# Set by Scenario.write_bash in mixed VM+container scenarios: the veth that
+		# carries VM->container traffic and the HTB minor of each (vm, container) pair.
+		self._vm_ctr_link = None
 		self._delay_matrix = []
 		self._exist_channel = False
+		# Decides what a closed contact window looks like on the wire: a hard
+		# cut only when a daemon can route around it. See nolos_netem().
+		self._routing_protocol = routing_protocol
 		self.channels = channel['Channel']
 		# O(1) channel-definition lookup keyed by the unordered group pair.
 		# Threshold is validated here (config-load time) instead of with an
@@ -211,12 +256,18 @@ class channel:
 					handle_id = f"1{j+1}:"
 
 					if delay == -1:
-						script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem loss 100%')
+						_killed_pair = bool(self._killed and (
+							node_n_data['name'] in self._killed
+							or node_cache[j]['name'] in self._killed))
+						_spec = killed_netem() if _killed_pair else nolos_netem(self._routing_protocol)
+						script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} {_spec}')
+						self._mirror_to_link(n, j, _spec, script_lines)
 					elif delay != 0:
 						Channel = self._Get_Channel_Definition(node_n_data['obj'], node_cache[j]['obj'])
 						losses = f"{Channel['Packet_loss']}%"
 						burst_losses = f"{Channel['Correlated_losses']}%"
 						script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem delay {delay:f}ms loss {losses} {burst_losses}')
+						self._mirror_to_link(n, j, f'netem delay {delay:f}ms loss {losses} {burst_losses}', script_lines)
 
 				# Dynamic Data_rate: re-shape the HTB class if the configured
 				# rate differs from the one currently applied.
@@ -281,12 +332,18 @@ class channel:
 				class_id = f"1:{j+1}"
 				handle_id = f"1{j+1}:"
 				if delay == -1:
-					script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem loss 100%')
+					_killed_pair = bool(self._killed and (
+						node_n_data['name'] in self._killed
+						or node_cache[j]['name'] in self._killed))
+					_spec = killed_netem() if _killed_pair else nolos_netem(self._routing_protocol)
+					script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} {_spec}')
+					self._mirror_to_link(n, j, _spec, script_lines)
 				elif delay != 0:
 					Channel = self._Get_Channel_Definition(node_n_data['obj'], node_cache[j]['obj'])
 					losses = f"{Channel['Packet_loss']}%"
 					burst_losses = f"{Channel['Correlated_losses']}%"
 					script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem delay {delay:f}ms loss {losses} {burst_losses}')
+					self._mirror_to_link(n, j, f'netem delay {delay:f}ms loss {losses} {burst_losses}', script_lines)
 				if n < j:
 					self._sync_routing_pair(n, j, delay, node_list, routing_cmds)
 
@@ -332,6 +389,14 @@ class channel:
 			return f"02:42:{int(o[0]):02x}:{int(o[1]):02x}:02:{int(o[3]):02x}"
 		except Exception:
 			return None
+
+	def _mirror_to_link(self, n, j, spec, script_lines):
+		'''Repeat a (n, j) netem change on the VM->container link, if that pair has a class there.'''
+		link = self._vm_ctr_link
+		if link:
+			minor = link['pairs'].get((n, j))
+			if minor is not None:
+				script_lines.append(f"qdisc change dev {link['iface']} parent 1:{minor:x} handle {minor:x}: {spec}")
 
 	@staticmethod
 	def _tc_iface(node_data, n):

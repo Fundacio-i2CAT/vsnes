@@ -2,7 +2,7 @@
 from Class.Satellite import Satellite
 from Class.Ground_Station import GroundStation
 from Class.Time_parameters import time_parameters
-from Class.Channel import channel
+from Class.Channel import channel, nolos_netem
 from Class.routing import get_protocol
 
 from skyfield.api import load
@@ -51,15 +51,10 @@ class scenario:
 			self._time_parameters = time_parameters(TOMLfile['Time'])
 		self._node_list = []
 
-		try:
-			self._channel = channel(TOMLfile['Channels'])
-		except KeyError:
-			error_msg = f"Missing 'Channels' configuration"
-			logging.error(error_msg)
-			raise KeyError(error_msg)
-
 		# [Routing] protocol selection (Class/routing.py registry). Absent
-		# section -> 'none' (netem shaping only, no gating, no daemon).
+		# section -> 'none' (netem shaping only, no gating, no daemon). Read
+		# BEFORE the channel is built: it decides how a closed contact window
+		# is shaped (hard cut vs delay only — see Channel.nolos_netem()).
 		self._routing_protocol = TOMLfile.get('Routing', {}).get('protocol', 'none')
 		get_protocol(self._routing_protocol)   # validate at load time
 		if 'Routing' not in TOMLfile:
@@ -67,6 +62,13 @@ class scenario:
 			                "protocol = 'none' (no mesh routing daemon)")
 		else:
 			logging.info(f"Routing protocol: {self._routing_protocol}")
+
+		try:
+			self._channel = channel(TOMLfile['Channels'], self._routing_protocol)
+		except KeyError:
+			error_msg = f"Missing 'Channels' configuration"
+			logging.error(error_msg)
+			raise KeyError(error_msg)
 
 
 		self._nNodes = 0
@@ -238,6 +240,16 @@ class scenario:
 		# restart the parameters of simulatión, put date_time marker equal to 0 and update de scenario
 		self._time_parameters.reset()
 		self._channel.update(self._node_list,self._nNodes,self._time_parameters._marker,False)
+	VM_CTR_LINK = 'vsnes'   # veth pair vsnes-dk (docker bridge) <-> vsnes-sat (brSATEMU)
+
+	def _docker_bridge(self, docker_vm_nodes):
+		'''Host bridge the containers' veths are enslaved to (e.g. br-44c4c60e4da4).'''
+		for _, nd in docker_vm_nodes:
+			veth = getattr(nd, '_veth_iface', None) or nd.get_docker_veth()
+			if veth and os.path.exists(f'/sys/class/net/{veth}/master'):
+				return os.path.basename(os.path.realpath(f'/sys/class/net/{veth}/master'))
+		return None
+
 	def write_bash(self):
 		"""Write runtime_bash.sh and shutdown_bash.sh for channel emulation setup.
 
@@ -322,7 +334,7 @@ class scenario:
 							rate = 100.0
 						tc_up.append(f'class add dev {ifb} parent 1: classid 1:{j} htb rate {rate}mbit')
 						if delay == -2 or delay == -1:
-							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: netem loss 100%')
+							tc_up.append(f'qdisc add dev {ifb} parent 1:{j} handle 1{j}: {nolos_netem(self._routing_protocol)}')
 						else:
 							try:
 								losses = f"{Ch['Packet_loss']}%"
@@ -345,7 +357,9 @@ class scenario:
 							# Fallback for non-Docker nodes: IP destination filter (no multi-hop).
 							emu_ip = str(getattr(dest_node, '_ip', '') or '')
 							for dip in dict.fromkeys(filter(None, (emu_ip, dest_ip))):
-								tc_up.append(f'filter add dev {ifb} parent 1:0 protocol ip prio 1 u32 match ip dst {dip}/32 flowid 1:{j}')
+								# prio 2, not 1: the flower filters above are `protocol all prio 1`, and a priority can hold
+								# only one protocol, so sharing it makes every flower add fail (silently, under -force)
+								tc_up.append(f'filter add dev {ifb} parent 1:0 protocol ip prio 2 u32 match ip dst {dip}/32 flowid 1:{j}')
 
 				with open('ip_setup.batch', 'w') as f:
 					f.write('\n'.join(ip_up) + '\n')
@@ -409,7 +423,7 @@ class scenario:
 							except (KeyError, TypeError, ValueError):
 								w_runtime.write('sudo tc class add dev %s.%d parent 1: classid 1:%d htb rate 100mbit\n' % (interface, n, j))
 							if delay == -1:
-								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: netem loss 100\n' % (interface, n, j, j))
+								w_runtime.write('sudo tc qdisc add dev %s.%d parent 1:%d handle 1%d: %s\n' % (interface, n, j, j, nolos_netem(self._routing_protocol)))
 							else:
 								Losses = str(Ch['Packet_loss']) + '%'
 								Corr   = str(Ch['Correlated_losses']) + '%'
@@ -417,6 +431,55 @@ class scenario:
 						w_runtime.write('sudo tc filter add dev %s.%d protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d\n' % (interface, n, j, j))
 					if node.node_type == 'vm_external':
 						w_shutdown.write(f"sshpass -p '{node._password}' ssh -o StrictHostKeyChecking=no {node._username}@{node.ip_ext} 'sudo -S ip link del {interface}'\n")
+
+				# ── Mixed scenario: join the containers' L2 (docker bridge) to brSATEMU ──
+				# Containers carry their emulated 10.0.0.x on the docker bridge, VMs on
+				# brSATEMU; without this veth pair nothing joins the two, so container<->VM
+				# traffic on the emulated network never arrives (ARP goes unanswered).
+				# Container->VM is shaped on the container's ifb (dst-IP filter, Phase 2).
+				# VM->container leaves brSATEMU through vsnes-sat, so it is shaped there:
+				# one HTB class per (VM, container) pair, matched by src+dst emulated IP.
+				self._channel._vm_ctr_link = None
+				docker_br = self._docker_bridge(docker_vm_nodes) if docker_vm_nodes else None
+				if docker_vm_nodes and not docker_br:
+					logging.error("write_bash: could not find the containers' docker bridge — "
+					              "containers and VMs will NOT reach each other on the emulated network")
+				if docker_br:
+					link = self.VM_CTR_LINK
+					w_runtime.write(f'sudo ip link del {link}-dk 2>/dev/null || true\n')
+					w_runtime.write(f'sudo ip link add {link}-dk type veth peer name {link}-sat\n')
+					w_runtime.write(f'sudo ip link set {link}-dk master {docker_br} up\n')
+					w_runtime.write(f'sudo ip link set {link}-sat master brSATEMU up\n')
+					w_runtime.write(f'sudo tc qdisc add dev {link}-sat root handle 1: htb\n')
+					# Management plane: let VMs and local containers reach each other
+					# (the enp4s0 rule above only covers containers on a remote host).
+					for rule in (f'-i {docker_br} -o virbr0 -s {self._network_ext} -d 192.168.122.0/24 -j ACCEPT',
+					             f'-i virbr0 -o {docker_br} -s 192.168.122.0/24 -d {self._network_ext} -j ACCEPT'):
+						w_runtime.write(f'sudo iptables -I FORWARD {rule}\n')
+						w_shutdown.write(f'sudo iptables -D FORWARD {rule}\n')
+					pairs = {}
+					for n, vm in classic_vm_nodes:
+						for j, ctr in docker_vm_nodes:
+							minor = n * 256 + j          # unique per pair; tc reads it as hex
+							pairs[(n - 1, j - 1)] = minor
+							delay = self._channel.get_channel(n - 1, j - 1)
+							Ch = self._channel._Get_Channel_Definition(vm, ctr)
+							try:
+								rate = float(Ch['Data_rate'])
+							except (TypeError, KeyError, ValueError):
+								rate = 100.0
+							w_runtime.write(f'sudo tc class add dev {link}-sat parent 1: classid 1:{minor:x} htb rate {rate}mbit\n')
+							if delay == -2:
+								spec = 'netem loss 100'
+							elif delay == -1:
+								spec = nolos_netem(self._routing_protocol)
+							else:
+								spec = f"netem delay {delay:f}ms loss {Ch['Packet_loss']}% {Ch['Correlated_losses']}%"
+							w_runtime.write(f'sudo tc qdisc add dev {link}-sat parent 1:{minor:x} handle {minor:x}: {spec}\n')
+							w_runtime.write(f'sudo tc filter add dev {link}-sat parent 1:0 protocol ip prio 1 u32 '
+							                f'match ip src {vm._ip}/32 match ip dst {ctr._ip}/32 flowid 1:{minor:x}\n')
+					w_shutdown.write(f'sudo ip link del {link}-dk 2>/dev/null\n')
+					self._channel._vm_ctr_link = {'iface': f'{link}-sat', 'pairs': pairs}
 
 				w_shutdown.write('sudo ip link set vsnes_ext down\n')
 				w_shutdown.write('sudo ip link del vsnes_ext\n')
@@ -626,7 +689,7 @@ class scenario:
 			"    ports:",
 			'      - "5001:5000"',
 			"    volumes:",
-			"      - ./registry-data:/var/lib/registry",
+			"      - ./test/registry-data:/var/lib/registry",
 			"    networks:",
 			"      olsr_net:",
 			"        ipv4_address: 172.28.0.250",

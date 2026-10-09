@@ -85,6 +85,17 @@ def paper_view():
 	# green orbits, cyan links, yellow coverage circles, no controls.
 	return render_template('paper.html')
 
+@app.route('/servicePlacement', methods=['GET'])
+def service_placement():
+	"""Satellites currently hosting a service"""
+	path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+	                    'Positions', 'service_placement.json')
+	try:
+		with open(path) as f:
+			return jsonify(json.load(f))
+	except Exception:
+		return jsonify({"serving": {}, "sim": "", "updated": 0})
+
 @app.route('/ScenarioCZML.czml')
 def czmlData():
 	return render_template('ScenarioCZML.czml')
