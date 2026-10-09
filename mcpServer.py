@@ -428,6 +428,11 @@ async def execute_vm_command(target: str, command: str) -> Dict[str, Any]:
 
 SNES_DIR = os.path.dirname(os.path.abspath(__file__))
 
+from Class.tle_generator import write_tle
+
+# libvirt base image cloned for every type='vm' node unless the node sets clone_vm
+DEFAULT_CLONE_VM = "debian11"
+
 # --- Pydantic Models ---
 
 NodeType = Literal["vm", "vm_external", "container", "container_external"]
@@ -445,6 +450,7 @@ class SatelliteConfig(BaseModel):
         "container = internal Docker container VSNES creates via compose"))
     ip_ext: str = Field(default="", description="Management IP; required for every type except 'vm'")
     interface: str = Field(default="eth0")
+    clone_vm: str = Field(default=DEFAULT_CLONE_VM, description="libvirt base image to clone (only used when type='vm')")
 
 class GroundStationConfig(BaseModel):
     name: str = Field(description="Ground station name, e.g. 'Ibi_ES'")
@@ -458,6 +464,7 @@ class GroundStationConfig(BaseModel):
     type: NodeType = Field(default="container")
     ip_ext: str = Field(default="", description="Management IP; required for every type except 'vm'")
     interface: str = Field(default="eth0")
+    clone_vm: str = Field(default=DEFAULT_CLONE_VM, description="libvirt base image to clone (only used when type='vm')")
 
 class ChannelConfig(BaseModel):
     node1: str = Field(description="Source group name, e.g. 'LEO'")
@@ -604,7 +611,7 @@ async def get_config_guide() -> Dict[str, Any]:
             "tle_file": {
                 "title": "Orbital Data",
                 "question": "What TLE file to use? (default: sample.tle)",
-                "reasoning": "If using SGP4 propagator, the TLE file must contain entries matching satellite names or catalog numbers. Celestrak is a good source for real TLE data."
+                "reasoning": "If using SGP4 propagator, the TLE file must contain entries matching satellite names or catalog numbers. Celestrak is a good source for real TLE data. To create N satellites evenly spaced in one orbital plane, call generate_tle (names default to SATELLITE-1..N) and pass its path as tle_file."
             },
             "docker": {
                 "title": "Container Deployment (optional)",
@@ -714,7 +721,7 @@ async def generate_config_toml(
         lines.append(f"\t\tinterface = '{sat.interface}'")
         if sat.type == "vm":
             lines.append(f"\t\t[SpaceSegment.SatelliteSistem.clone_VM]")
-            lines.append(f"\t\t\tname_VM = '{sat.name}' ")
+            lines.append(f"\t\t\tname_VM = '{sat.clone_vm}'")
     
     # Ground Segment
     lines.append("[GroundSegment]")
@@ -735,7 +742,7 @@ async def generate_config_toml(
         lines.append(f"\t\tinterface = '{gs.interface}'")
         if gs.type == "vm":
             lines.append(f"\t\t[GroundSegment.GroundSistem.clone_VM]")
-            lines.append(f"\t\t\tname_VM = '{gs.name}'")
+            lines.append(f"\t\t\tname_VM = '{gs.clone_vm}'")
     
     # Channels
     lines.append("[Channels]")
@@ -779,6 +786,59 @@ async def generate_config_toml(
 
 
 # --- Tool 3: generate_docker_compose ---
+
+# --- Tool 3: generate_tle ---
+
+@mcp.tool()
+async def generate_tle(
+    num_satellites: int,
+    output_path: str = "generated.tle",
+    name_prefix: str = "SATELLITE-",
+    first_index: int = 1,
+    inclination_deg: float = 86.4,
+    raan_deg: float = 0.0,
+    altitude_km: Optional[float] = None,
+    mean_motion: float = 14.35663288,
+    eccentricity: float = 0.0001,
+    phase_offset_deg: float = 0.0,
+    overwrite: bool = False
+) -> Dict[str, Any]:
+    """
+    Generate a TLE file with N satellites evenly spaced in ONE orbital plane.
+
+    Satellite names are "<name_prefix><n>" so they match the satellite names
+    in config.toml; pass the resulting path as tle_file to generate_config_toml.
+    Defaults reproduce the walker66 orbit (86.4 deg inclination, 14.35663288
+    rev/day).
+
+    Args:
+        num_satellites: How many satellites, spaced 360/N degrees apart.
+        output_path: Where to write the TLE (relative to SNES root).
+        name_prefix: Name prefix; satellite i is named prefix + (first_index + i).
+        first_index: Number of the first satellite (also its catalog number).
+        inclination_deg: Orbit inclination.
+        raan_deg: Right ascension of the ascending node.
+        altitude_km: If set, derives mean_motion from this circular-orbit altitude.
+        mean_motion: Revolutions per day (ignored when altitude_km is set).
+        eccentricity: Orbit eccentricity.
+        phase_offset_deg: Rotates the whole ring along the orbit.
+        overwrite: Whether to overwrite if file exists.
+    """
+    full_path = os.path.realpath(os.path.join(SNES_DIR, output_path))
+    if os.path.commonpath([full_path, SNES_DIR]) != SNES_DIR:
+        return {"status": "error", "message": f"output_path '{output_path}' is outside the SNES directory"}
+    if os.path.exists(full_path) and not overwrite:
+        return {"status": "error", "message": f"File '{output_path}' already exists. Set overwrite=True to replace."}
+    try:
+        text = write_tle(full_path, overwrite=True, num_sats=num_satellites, name_prefix=name_prefix,
+                         first_index=first_index, inclination_deg=inclination_deg, raan_deg=raan_deg,
+                         altitude_km=altitude_km, mean_motion=mean_motion, eccentricity=eccentricity,
+                         phase_offset_deg=phase_offset_deg)
+    except (ValueError, OSError) as e:
+        return {"status": "error", "message": str(e)}
+    names = text.split("\n")[0::3][:num_satellites]
+    return {"status": "success", "message": f"TLE written to {full_path}", "path": output_path,
+            "satellites": names}
 
 @mcp.tool()
 async def generate_docker_compose() -> Dict[str, Any]:

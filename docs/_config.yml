@@ -1,0 +1,26 @@
+title: VSNES
+description: Virtual Satellite Network Emulator System
+baseurl: "/vsnes"
+url: "https://fundacio-i2cat.github.io"
+remote_theme: just-the-docs/just-the-docs
+plugins:
+  - jekyll-remote-theme
+search_enabled: true
+heading_anchors: true
+color_scheme: light
+aux_links:
+  "GitHub":
+    - "https://github.com/Fundacio-i2CAT/vsnes"
+# Only publish the site pages, not working notes
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+
+# Remote themes don't ship default front matter: without this the pages get no layout
+# (no stylesheet, no sidebar).
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

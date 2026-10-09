@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSNES — Static Demo</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        .control-panel { bottom: 56px; max-height: calc(100vh - 160px); }
+        .toggle-button { bottom: 56px; }
+    </style>
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/responsive-fixes.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="cesiumContainer"></div>
+    <div id="hiddenCredits" style="display:none"></div>
+
+    <!-- Control Panel -->
+    <div id="controlPanel" class="control-panel">
+        <div class="control-panel-header">
+            <h2 class="control-panel-title">Mission Control</h2>
+            <button id="closeControlPanel" class="btn-close btn-icon" aria-label="Close panel">
+                <img src="assets/images/icons/close.png" alt="Close">
+            </button>
+        </div>
+
+        <!-- Configuration Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Configuration</h3>
+
+            <div class="form-group">
+                <button id="genConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/download.png" alt="Settings">
+                    Generate Configuration
+                </button>
+                <div class="file-input-container">
+                    <input type="file" id="configFile" class="file-input" accept=".toml">
+                    <label for="configFile" class="file-input-label">
+                        <img src="assets/images/icons/upload.png" alt="Upload"
+                            class="btn-icon-img">
+                        Select Config File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadConfigBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/file.png" alt="Upload">
+                    Upload Config
+                </button>
+            </div>
+
+            <div class="form-group">
+                <div class="file-input-container">
+                    <input type="file" id="tleFile" class="file-input" accept=".tle">
+                    <label for="tleFile" class="file-input-label">
+                        <img src="assets/images/icons/upload.png" alt="Upload"
+                            class="btn-icon-img">
+                        Select TLE File
+                    </label>
+                    <div class="file-name">No file selected</div>
+                </div>
+                <button id="uploadTLEBtn" class="btn btn-secondary btn-icon">
+                    <img src="assets/images/icons/file.png" alt="Upload">
+                    Upload TLE
+                </button>
+            </div>
+
+            <button id="loadConfigBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/settings.png" alt="Settings">
+                Load Configuration
+            </button>
+
+
+            <button id="initScenarioBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/settings.png" alt="Settings">
+                Init Scenario
+            </button>
+
+            <button id="stopAllVMsBtn" class="btn btn-secondary btn-icon">
+                <img src="assets/images/icons/stop.png" alt="Settings">
+                Stop all VMs
+            </button>
+
+            <button id="loadAndViewTLEBtn" class="btn btn-primary btn-icon">
+                <img src="assets/images/icons/eye.png" alt="View">
+                Load & View TLE
+            </button>
+
+        </section>
+
+        <!-- Simulation Control Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">Simulation Control</h3>
+
+            <div class="checkbox-container">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="runVmsCheckbox">
+                    <span class="checkmark"></span>
+                </label>
+                <span>Run Simulation</span>
+            </div>
+
+            <div class="d-flex justify-between mt-2">
+                <button id="startSimulationBtn" class="btn btn-success btn-icon" style="width: 48%;">
+                    <img src="assets/images/icons/play.png" alt="Play">
+                    Start
+                </button>
+                <button id="stopSimulationBtn" class="btn btn-danger btn-icon" style="width: 48%;">
+                    <img src="assets/images/icons/stop.png" alt="Stop">
+                    Stop
+                </button>
+            </div>
+            <button id="getStatusBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="assets/images/icons/status.png" alt="Status">
+                Get Status
+            </button>
+            <button id="reloadCzmlBtn" class="btn btn-secondary btn-icon mt-1">
+                <img src="assets/images/icons/eye.png" alt="Reload">
+                Reload CZML
+            </button>
+        </section>
+
+        <!-- Status Section -->
+        <section class="control-panel-section">
+            <h3 class="control-panel-section-title">System Status</h3>
+
+            <div class="d-flex align-center mb-1">
+                <span id="statusMessage" class="status-message status-normal ml-1">Static demo — controls are not functional</span>
+            </div>
+
+            <div class="d-flex align-center mt-1 mb-1">
+                <span id="simulationTimeDisplay" class="status-message status-normal ml-1">Sim Time: replay of a saved scenario</span>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Toggle Button (initially hidden) -->
+    <button id="toggleControlPanel" class="toggle-button" style="display: none;">
+        <img src="assets/images/icons/menu.png" alt="Menu">
+    </button>
+
+    <script>
+        // ---- figure style ------------------------------------------------
+        const ORBIT_COLOR = Cesium.Color.fromCssColorString("#22bb22");     // green orbits
+        const LINK_COLOR = Cesium.Color.fromCssColorString("#00c8ff");      // cyan ISL links
+        const GSL_COLOR = Cesium.Color.fromCssColorString("#ff8c00");       // orange sat-to-ground links
+        const COVERAGE_COLOR = Cesium.Color.fromCssColorString("#ffd400");  // yellow coverage
+        const SAT_SCALE = 0.35;      // small satellite icons
+        const GS_SCALE = 0.32;       // small ground stations
+
+        const ALT_KM = 773.0;            // walker66.tle mean altitude
+        const COVERAGE_ELEV_DEG = 5.0;   // config.toml LEO<->GS Min_elevation_angle
+        const RE_KM = 6371.0;
+        const el = Cesium.Math.toRadians(COVERAGE_ELEV_DEG);
+        const psi = Math.acos((RE_KM / (RE_KM + ALT_KM)) * Math.cos(el)) - el;
+        const COVERAGE_RADIUS_M = RE_KM * psi * 1000.0;
+
+        // ---- viewer: no controls, white scene ----------------------------
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: true,
+            timeline: true,
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: true,
+            sceneModePicker: true,
+            navigationHelpButton: true,
+            fullscreenButton: true,
+            fullscreenElement: document.body,
+            selectionIndicator: false,
+            infoBox: false,
+            shouldAnimate: true,
+            skyBox: false,
+            skyAtmosphere: false,
+            creditContainer: "hiddenCredits",
+            imageryProvider: false,
+            terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+            contextOptions: { webgl: { alpha: true } }
+        });
+
+        const scene = viewer.scene;
+        const SPACE_COLOR = Cesium.Color.WHITE; // pale slate
+        scene.backgroundColor = SPACE_COLOR;
+        scene.globe.baseColor = Cesium.Color.WHITE;
+        scene.globe.showGroundAtmosphere = false;
+        scene.globe.enableLighting = false;
+        scene.fog.enabled = false;
+        if (scene.sun) scene.sun.show = false;
+        if (scene.moon) scene.moon.show = false;
+        if (scene.skyBox) scene.skyBox.show = false;
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(10, 40, 26_000_000)
+        });
+
+        // ---- Earth limb ---------------------------------------------------
+        // Cesium cannot outline the globe, so draw the horizon explicitly:
+        // the circle acos(R/d) from the sub-camera point. HANDOVER §8.
+        const LIMB_COLOR = Cesium.Color.BLACK;
+        const R_M = 6371000.0;
+        let limbEntity = null;
+
+        function drawLimb() {
+            const carto = Cesium.Cartographic.fromCartesian(viewer.camera.positionWC);
+            if (!carto) return;
+            const d = R_M + carto.height;
+            if (d <= R_M) return;
+            const theta = Math.acos(Math.min(1.0, R_M / d));   // angular radius
+            const radius_m = R_M * theta;                      // arc length on the surface
+            const centre = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, 0);
+            if (limbEntity) viewer.entities.remove(limbEntity);
+            limbEntity = viewer.entities.add({
+                position: centre,
+                ellipse: {
+                    semiMajorAxis: radius_m,
+                    semiMinorAxis: radius_m,
+                    height: 0,
+                    fill: false,
+                    outline: true,
+                    outlineColor: LIMB_COLOR,
+                    outlineWidth: 2,
+                    granularity: Cesium.Math.toRadians(0.5)
+                }
+            });
+        }
+        drawLimb();
+        viewer.camera.changed.addEventListener(drawLimb);
+        viewer.camera.percentageChanged = 0.01;   // fire on small moves too
+
+        // ---- country borders in black ------------------------------------
+        const BORDERS_URL =
+            "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
+        Cesium.GeoJsonDataSource.load(BORDERS_URL, {
+            stroke: Cesium.Color.BLACK,
+            fill: Cesium.Color.TRANSPARENT,
+            strokeWidth: 1.2
+        }).then(ds => {
+            ds.entities.values.forEach(e => {
+                if (e.polygon) {
+                    e.polygon.fill = false;
+                    e.polygon.outline = true;
+                    e.polygon.outlineColor = Cesium.Color.BLACK;
+                    e.polygon.height = 0;   // outline on the ellipsoid surface
+                }
+            });
+            viewer.dataSources.add(ds);
+        }).catch(err => console.warn("Country borders unavailable:", err));
+
+        // ---- Iridium grid: keep only the 4 real ISLs per satellite --------
+        // SATELLITE-N -> plane = (N-1)/11, slot = (N-1)%11 (6 planes x 11).
+        // Front/back  = same plane, adjacent slot (mod 11).
+        // Left/right  = adjacent plane, same slot. No links across the
+        // counter-rotating seam (plane 0 <-> plane 5).
+        const PLANES = 6, PER_PLANE = 11;
+        function satIndex(name) {
+            const m = /^SATELLITE-(\d+)$/.exec(name);
+            return m ? parseInt(m[1], 10) - 1 : null;
+        }
+        // classify a polyline entity id: "isl" (grid ISL), "gsl" (sat-ground
+        // contact), or "hide" (non-grid ISL)
+        function linkType(id) {
+            const parts = id.split("-to-");
+            if (parts.length !== 2) return "isl";       // not a link id
+            const a = satIndex(parts[0]), b = satIndex(parts[1]);
+            if (a === null || b === null) return "gsl"; // sat-to-ground contact
+            const pa = Math.floor(a / PER_PLANE), sa = a % PER_PLANE;
+            const pb = Math.floor(b / PER_PLANE), sb = b % PER_PLANE;
+            if (pa === pb) {                            // front/back
+                const d = Math.abs(sa - sb);
+                return (d === 1 || d === PER_PLANE - 1) ? "isl" : "hide";
+            }
+            if (Math.abs(pa - pb) === 1)                // left/right
+                return sa === sb ? "isl" : "hide";
+            return "hide";                              // seam or farther
+        }
+
+        // ---- scenario CZML, restyled --------------------------------------
+        Cesium.CzmlDataSource.load("ScenarioCZML.czml").then(ds => {
+            ds.entities.values.forEach(e => {
+                // hide every label
+                if (e.label) e.label.show = new Cesium.ConstantProperty(false);
+
+                if (e.polyline) {
+                    const kind = linkType(e.id);
+                    if (kind === "hide") {
+                        // non-grid ISL: hide entirely (overrides LOS intervals)
+                        e.polyline.show = new Cesium.ConstantProperty(false);
+                        return;
+                    }
+                    // grid ISL -> cyan, sat-to-ground contact -> orange
+                    // (both keep their LOS show intervals)
+                    e.polyline.material = new Cesium.ColorMaterialProperty(
+                        kind === "gsl" ? GSL_COLOR : LINK_COLOR);
+                    e.polyline.width = 1;
+                    return;
+                }
+
+                if (e.path) {
+                    // satellite: green orbit, small icon, yellow coverage circle
+                    // draw a full ring: lead + trail cover one orbital period
+                    const PERIOD_S = 6028;   // ~100.4 min at 780 km
+                    e.path.material = new Cesium.ColorMaterialProperty(ORBIT_COLOR);
+                    e.path.width = 2;
+                    e.path.leadTime = new Cesium.ConstantProperty(PERIOD_S);
+                    e.path.trailTime = new Cesium.ConstantProperty(PERIOD_S);
+                    e.path.resolution = new Cesium.ConstantProperty(60);
+                    if (e.billboard) e.billboard.scale = SAT_SCALE;
+                    e.ellipse = new Cesium.EllipseGraphics({
+                        semiMajorAxis: COVERAGE_RADIUS_M,
+                        semiMinorAxis: COVERAGE_RADIUS_M,
+                        height: 0,
+                        fill: false,
+                        outline: true,
+                        outlineColor: COVERAGE_COLOR,
+                        outlineWidth: 2,
+                        granularity: Cesium.Math.toRadians(2.0)
+                    });
+                    return;
+                }
+
+                if (e.billboard) {
+                    // ground station: small icon
+                    e.billboard.scale = GS_SCALE;
+                }
+            });
+            viewer.dataSources.add(ds);
+            viewer.clock.shouldAnimate = true;
+            // service overlay needs the live /servicePlacement feed — not available in the static demo
+        }).catch(err => console.error("Error loading CZML:", err));
+
+        // ---- service overlay ----------------------------------------------
+        // Tint satellites currently hosting a service; fed by
+        // test/scripts/service_placement_feed.py. HANDOVER §8.
+        const SERVING_COLOR   = Cesium.Color.fromCssColorString("#E8453C"); // red
+        const SERVING_RING    = Cesium.Color.fromCssColorString("#E8453C");
+        const IDLE_COLOR      = Cesium.Color.WHITE;
+        const SERVING_SCALE   = SAT_SCALE * 1.2;
+        const SERVICE_POLL_MS = 3000;
+
+        function startServiceOverlay(ds) {
+            // index satellite entities by CZML id (SATELLITE-N)
+            const sats = new Map();
+            ds.entities.values.forEach(e => {
+                if (e.path && e.billboard) sats.set(String(e.id).toUpperCase(), e);
+            });
+            let labelDiv = document.createElement("div");
+            labelDiv.style.cssText =
+                "position:absolute;left:12px;top:12px;font:13px/1.45 serif;" +
+                "color:#111;background:rgba(255,255,255,.82);padding:6px 10px;" +
+                "border:1px solid #bbb;white-space:pre;z-index:10";
+            document.body.appendChild(labelDiv);
+
+            async function refresh() {
+                try {
+                    const r = await fetch("servicePlacement", {cache: "no-store"});
+                    const d = await r.json();
+                    const serving = d.serving || {};
+                    sats.forEach((e, id) => {
+                        const svcs = serving[id];
+                        const on = !!(svcs && svcs.length);
+                        e.billboard.color = new Cesium.ConstantProperty(
+                            on ? SERVING_COLOR : IDLE_COLOR);
+                        e.billboard.scale = new Cesium.ConstantProperty(
+                            on ? SERVING_SCALE : SAT_SCALE);
+                        if (e.ellipse) {
+                            e.ellipse.outlineColor = new Cesium.ConstantProperty(
+                                on ? SERVING_RING : COVERAGE_COLOR);
+                            e.ellipse.outlineWidth = new Cesium.ConstantProperty(on ? 3 : 2);
+                        }
+                        // name the services on the serving satellites only
+                        if (e.label) {
+                            e.label.show = new Cesium.ConstantProperty(on);
+                            if (on) {
+                                e.label.text = new Cesium.ConstantProperty(
+                                    id.replace("SATELLITE-", "sat-") + "\n" + svcs.join(", "));
+                                e.label.fillColor = new Cesium.ConstantProperty(SERVING_COLOR);
+                                e.label.scale = new Cesium.ConstantProperty(0.45);
+                                e.label.showBackground = new Cesium.ConstantProperty(true);
+                                e.label.backgroundColor = new Cesium.ConstantProperty(
+                                    Cesium.Color.WHITE.withAlpha(0.75));
+                            }
+                        }
+                    });
+                    const n = Object.keys(serving).length;
+                    const tot = Object.values(serving).reduce((a, v) => a + v.length, 0);
+                    labelDiv.textContent =
+                        "sim " + (d.sim || "").replace("T", " ").slice(0, 19) +
+                        "\nserving: " + tot + " service(s) on " + n + " satellite(s)";
+                } catch (err) {
+                    console.warn("service overlay:", err);
+                }
+            }
+            refresh();
+            setInterval(refresh, SERVICE_POLL_MS);
+        }
+    </script>
+
+    <script>
+        // Visual only: collapse / expand the control panel, as in the real dashboard.
+        (function () {
+            const panel = document.getElementById("controlPanel");
+            const button = document.getElementById("toggleControlPanel");
+            function toggle() {
+                panel.classList.toggle("hidden");
+                button.style.display = panel.classList.contains("hidden") ? "flex" : "none";
+            }
+            button.addEventListener("click", toggle);
+            document.getElementById("closeControlPanel").addEventListener("click", toggle);
+        })();
+    </script>
+</body>
+
+</html>

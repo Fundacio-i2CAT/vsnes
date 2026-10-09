@@ -64,6 +64,9 @@ class channel:
 	'''A channel object defines the delays between nodes'''
 
 	def __init__(self, channel, routing_protocol='none'):
+		# Set by Scenario.write_bash in mixed VM+container scenarios: the veth that
+		# carries VM->container traffic and the HTB minor of each (vm, container) pair.
+		self._vm_ctr_link = None
 		self._delay_matrix = []
 		self._exist_channel = False
 		# Decides what a closed contact window looks like on the wire: a hard
@@ -258,11 +261,13 @@ class channel:
 							or node_cache[j]['name'] in self._killed))
 						_spec = killed_netem() if _killed_pair else nolos_netem(self._routing_protocol)
 						script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} {_spec}')
+						self._mirror_to_link(n, j, _spec, script_lines)
 					elif delay != 0:
 						Channel = self._Get_Channel_Definition(node_n_data['obj'], node_cache[j]['obj'])
 						losses = f"{Channel['Packet_loss']}%"
 						burst_losses = f"{Channel['Correlated_losses']}%"
 						script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem delay {delay:f}ms loss {losses} {burst_losses}')
+						self._mirror_to_link(n, j, f'netem delay {delay:f}ms loss {losses} {burst_losses}', script_lines)
 
 				# Dynamic Data_rate: re-shape the HTB class if the configured
 				# rate differs from the one currently applied.
@@ -332,11 +337,13 @@ class channel:
 						or node_cache[j]['name'] in self._killed))
 					_spec = killed_netem() if _killed_pair else nolos_netem(self._routing_protocol)
 					script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} {_spec}')
+					self._mirror_to_link(n, j, _spec, script_lines)
 				elif delay != 0:
 					Channel = self._Get_Channel_Definition(node_n_data['obj'], node_cache[j]['obj'])
 					losses = f"{Channel['Packet_loss']}%"
 					burst_losses = f"{Channel['Correlated_losses']}%"
 					script_lines.append(f'qdisc change dev {interface} parent {class_id} handle {handle_id} netem delay {delay:f}ms loss {losses} {burst_losses}')
+					self._mirror_to_link(n, j, f'netem delay {delay:f}ms loss {losses} {burst_losses}', script_lines)
 				if n < j:
 					self._sync_routing_pair(n, j, delay, node_list, routing_cmds)
 
@@ -382,6 +389,14 @@ class channel:
 			return f"02:42:{int(o[0]):02x}:{int(o[1]):02x}:02:{int(o[3]):02x}"
 		except Exception:
 			return None
+
+	def _mirror_to_link(self, n, j, spec, script_lines):
+		'''Repeat a (n, j) netem change on the VM->container link, if that pair has a class there.'''
+		link = self._vm_ctr_link
+		if link:
+			minor = link['pairs'].get((n, j))
+			if minor is not None:
+				script_lines.append(f"qdisc change dev {link['iface']} parent 1:{minor:x} handle {minor:x}: {spec}")
 
 	@staticmethod
 	def _tc_iface(node_data, n):
